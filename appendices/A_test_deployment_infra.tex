@@ -1,0 +1,112 @@
+\chapter{Docker-Based Testing Infrastructure}
+
+This appendix describes the docker-based infrastructure put in place to test the systems.
+
+\section{Docker Images}
+\label{sec:docker-images}
+
+This section describes the different Docker images of the infrastructure.
+
+\subsection{WildFly Application Server}
+
+\begin{itemize}
+    \item Ports exposed
+        \begin{itemize}
+        \item 8080: deployments endpoint
+        \item 9990: WildFly management interface
+        \end{itemize}
+        
+    \item Volumes
+        \begin{itemize}
+        \item \verb|/opt/jboss/wildfly/standalone/deployments/|: deployment folder of WildFly
+        \item \verb|/opt/jboss/wildfly/standalone/configuration/|: configuration folder of WildFly
+        \end{itemize}
+\end{itemize}
+
+This sets up a working WildFly server and install several tools used to build from source the different WARs that are deployed.
+Upon initial creation of the container there is no deployment, they are built on demand with the help of the build scripts that are shipped in the image.
+With the container running, run the following command to build a deployment: 
+
+\begin{verbatim}
+docker exec -it <container_name> build-war.sh <deployment_name>
+\end{verbatim}
+
+When running with the default docker-compose configuration, the name of the container would be \verb|deployments_wildfly-server_1|.
+Below are described the different deployments that can be built.
+
+\paragraph{i2b2}
+Deployment name: \verb|i2b2|, URL exposed: \verb|/i2b2/|
+
+The i2b2 WAR is actually a deployment of Axis2. Within this deployment, all the i2b2 cells are deployed as AAR files (Axis2 Archive):
+
+\begin{itemize}
+    \item \verb|CRC|: Clinical Research Chart (data repository)
+    \item \verb|ONT|: Ontology management
+    \item \verb|PM|: Project Management (authentication and authorization)
+    \item \verb|WORK|: Workflow management (query, result sharing)
+    \item \verb|FR|: File Repository
+    \item \verb|IM|: Identity Management
+\end{itemize}
+
+\paragraph{IRCT}
+Deployment name: \verb|irct|, URL exposed: \verb|/IRCT-CL/|
+
+Note that before you can build the IRCT deployment, i2b2 should have been built before (in order to deploy the JDBC drivers), and the database should up and initialized correctly.
+This is due to the fact that IRCT uses Hibernate to handle its data storage in the database, and when ran it will validate and update if necessary the database schema.
+To resolve an incompatibility of IRCT using Hibernate with the use of PostgreSQL, Hibernate is configured to add a prefix to all of the tables.
+
+% deployments to add: tranSMART 16.2, tranSMART 17.1, SHRINE, MedCO
+
+\subsection{PostgreSQL Database Server}
+
+\begin{itemize}
+    \item Ports exposed
+        \begin{itemize}
+        \item 5432: PostgreSQL port
+        \end{itemize}
+        
+    \item Volumes
+        \begin{itemize}
+        \item \verb|/var/lib/postgresql/data/|: PostgreSQL database files
+        \end{itemize}
+\end{itemize}
+
+This sets up a working PostgreSQL server and install several tools needed by the loading scripts that are ran upon the first run of the container.
+These scripts are copied in the \verb|/docker-entrypoint-initdb.d| folder.
+
+Below is an overview of the databases created.
+
+\paragraph{i2b2}
+Contains the i2b2 database schemas for all the cells and the default demo data.
+
+\paragraph{irct}
+Contains a snapshot of the IRCT database structure (that is updated as needed by Hibernate), and the resources information used by IRCT to connect to the resources:
+
+\begin{itemize}
+    \item \verb|i2b2-local|: the local i2b2 instance
+\end{itemize}
+
+\paragraph{transmart\_17\_1}
+Contains the structure and some default test data for tranSMART 17.1.
+    
+\subsection{Lighttpd Web Server}
+
+\begin{itemize}
+    \item Ports exposed
+        \begin{itemize}
+        \item 80: HTTP port
+        \end{itemize}
+\end{itemize}
+
+This sets up a working Lighttpd server with PHP and install several services:
+\begin{itemize}
+    \item \verb|/phppgadmin/|: phpPgAdmin PostgreSQL management tool
+    \item \verb|/i2b2-client/|: the i2b2 webclient, using the local i2b2 instance
+    \item \verb|/i2b2-admin/|: the i2b2 admin tool, managing the local i2b2 instance
+\end{itemize}
+
+
+\section{Docker-Compose Run Configuration}
+A default \verb|docker-compose.yml| is provided and works out of the box to create and deploy the images described section~\ref{sec:docker-images}.
+It creates a network to allow all the containers to communicate, exposes on the host the same ports as exposed by the container, and maps the WildFly volumes to directories alongside the Dockerfile.
+It does not require additional argument to be built and upped with the default configuration.

@@ -1,0 +1,170 @@
+\chapter{System Design}
+%--> here not the descriptive part (should go to related work / background), but the analytic part
+% only open source tech considered
+In the open-source spirit, existing technologies and standard. Maximizing the value of the work. 
+Integrating with existing systems.
+In order to meet the requirements explained section~\ref{sec:requirements}, 
+
+
+\section{Open-Source Technologies}
+Technologies for this are naturally split in two categories, client (front end) and server (back end) sides.
+In this section we compare and choose the basic building blocks of our solution and how they fit together from a high-level point-of-view.
+
+
+\subsection{Back End Systems: Clinical Research Platforms}
+As stated section~\ref{sec:requirements}, we target compatibility will the main open-source clinical research platforms. 
+In that area the two main players are \emph{i2b2} and \emph{tranSMART}.
+
+what exist there, which one we are targetting the compatibility for and why // descriptive part in related work / background
++ mention pic sure here or in separate subsec?
+
+
+
+% keep for obj. 2
+%\subsubsection{Privacy-Preserving Platform}
+%medco  here, the only one basically (check refs paper)
+
+transmart-rest-api plugin: what is it? no api natively ?
+
+
+
+
+\subsection{Front End System: Cohort Explorers}
+
+cohort exploration
+§ what's available (compatible with previously selected systems)
+borderline by etriks (?)
+GB
+i2b2 webclient: outdated technologies
+i2b2 workbench: heavy client, not portable enough
+transmartApp 
+todo: (description of the non relevant ones here? backgorund only things that we are actually using in the solution)
+
+§ Why GB 
+already compatible with 17.1
+
+§ what does gb need to work (what is it using from the transmart rest api?)
+
+§ mention building from scratch, but makes no sense
+
+% summary
+--> should conclude with what front end we want to use : GB
+
+\section{System Design Scenario}
+Now that we chose the fundamental building blocks of our solutions, there are two main approaches we can use to assemble them together.
+
+
+Assembling these tools together can take several roads, present them here.
+weigh the procs and cons
+2 main models: with or wihtout a backend component
+w/ backend component: can use IRCT as the backend
+Alternative models? (OLAP/MDX investigations? To be discussed)
+The final decision
+
+--> should conclude that we want the scenario 2, i.e. with a backend
+
+then paragraph to introduce the use of pic sure, which is an optional implementation option, but needs investigations -> next section
+
+
+\subsection{PIC-SURE API \& IRCT Investigations}
+
+% goal of investigations
+Given the choice of the scenario that makes use of a backend, the option of using the IRCT as the backend for the system is to be evaluated.
+On a first look it looks good 
+
+% technical analysis
+questions raised --> cf next §
+
+% questions raised and answered
+This first technical analysis raised some questions on IRCT, becasue we want the , we woul
+Because using IRCT introduce a heavy dependency towards it for Glowing Bear, 
+
+
+Decision on implementation scenario \& technologies
+Description of 2 scenarios
+PIC-SURE API Investigations
+I2b2, SHRINE and tranSMART 16.2 current status of integration
+Estimation of effort to integrate tranSMART 17.1
+
+
+PIC-SURE API Investigations
+§ what is being investigated, link to things explained before (why this is being investigated as potential solution)
+
+Actions of irct on external defined by set of definitions (list: predicates supported, things executed on resources), resources declare what they support
+Interface (RI) execute the action with the resource interface in the native protocol, result is returned as irct result
+
+Architecture: 4 layers (the components): put diagram
+Authentication done by irct (with external auth provider it seems?) - irct has set of credentials to talk to the resources 
+It uses JWT for authentication -> not sure how this works
+Jwt token is signed using the secret configured // https://auth0.com/docs/tokens/access-token
+Openid connect // for tests:https://openidconnect.net/
+---
+, using maven/java
+War deployed in wildfly or similar
+Hibernate for auto-gen of db (postgresql seems to work, event if a ext thing is compatible only with oracle: hmlsssynonyms)
+Sql files are provided to fill db (not tested yet)
+Configuration: should be guessed (wildfly can’t deploy without it)
+%Redirect_on_success: url to redirect after login
+%Client_secret: shared secret with auth provider
+%Userfield: user id field name in resp. From auth provider
+%Client_id: client id when talking to auth provider?
+%Domain: domain of auth provider?
+%Keyoutinmuntes: time out of key (120 mins default)
+
+
+analysis shoold be targeted: what is its goal? evaluate it meets the requirements of GB
+§ analysis/description of the API: todo %http://bd2k-picsure.hms.harvard.edu/docs/IRCT_Protocol_1.0.pdf !!!!! (actually took the 1.1)
+Notes:
+
+Layer -> interoperability layer (check the api doc pdf)
+introduce resource term
+
+infos in wiki + github
+
+§ questions that came up (list): from analyse of what’s available online, interrogations came up, include also the answers (check out list of questions that was made)
+
+§ set up of the thing: compiling from sources etc. packaged with docker (links to that)
+
+§ tests on the set up: what resources to take for tests? Must have is I2b2 and is supposed to work out the box (need shrine deployment then??) -- shrine not supported officially, but i2b2 
+If it works w/ i2b2 -> good, it will work with shrine-medco, and transmart 17.1 as native GB support in worst-case scenario (nice to have: transmart 17.1 adapter w/ irct)
+
+(conclusions on the investigations in subsections)
+
+
+About the existing UI tools: 
+
+--> should conclude here that we want to use pic sure
+
+----------
+\paragraph{tranSMART 17.1 Integration}
+In order to consider using the PIC-SURE API, we need to ensure that 
+§analyses of yes or not: Imoprtant: does GB matches with ability of the pic sure api? I.e. does the transmart api v2 can be replaced by pic sure 
+Or not? Since irct supports i2b2/old transmart it should support transmart api v2
+
+Irct works with resources: you ask the api about resource and what it can do, and you can query it with a unique api
+Hard to say with the only doc for api there is, it s a bit brief (but should be fine because of i2b2-transmart support)
+--> optional, best to have (also easier for GB developments)
+
+§estimation of the effort needed
+
+
+
+\section{Technical Choices Summary}
+--> conclusion to resume the technical choices made
+
+
+\paragraph{Front End}
+\emph{Glowing Bear}, with a dedicated back end serving as an interoperability layer: \emph{IRCT}.
+
+\paragraph{Supported Clinical Research Platforms}
+The relevance of these systems in our case lie in their API and how they are used. 
+To that extent, an exhaustive list of systems and API combinations we choose to support is the following:
+\begin{itemize}
+    \item tranSMART REST API v1 (versions >= 1.24 \& <= 16.2)~\cite{tranSMART-REST-API},
+    \item tranSMART REST API v2 (versions >= 17.1)~\cite{tranSMART-REST-API},
+    \item i2b2~\cite{i2b2-docs};
+    \item SHRINE~\cite{todo}
+    \item MedCo~\cite{todo}
+\end{itemize}
+
+Altogether these systems serve an enormous of data, and being able to access them from a unique front end would prove much beneficial to researchers.

@@ -1,0 +1,49 @@
+%Divide this into 2–3 sections
+%-eg “Design/Architecture” and “Implementation” details
+%-... but avoid generic section titles
+%Start with high-level overview of solution (top-down)
+%-Give the reader the bigger picture first
+%-Figure with overview of system architecture works well
+%-Roadmap helps as well
+%Give examples and make them consistent (eg a running example)
+
+\chapter{Interoperability Layer for Clinical Research Systems}
+
+Interoperability Layer for Clinical Research Systems
+Common Interoperability Components
+If IRCT: description of sources
+Connectors
+i2b2
+SHRINE
+(tranSMART 16.2)
+(tranSMART 17.1)
+
+\section{Design of the Solution}
+
+put the overall graph + two variants of transmart 17.1 with pic sure or not, if time allows
+--> make those graphs
+
+
+\section{Implementation of the Design}
+
+step by step sectionning: incl. current status of software and modifications / implementations to bring in
+
+1. irct setup + i2b2 + transmart 16.2 + shrine
+deployment mainly, data? i2b2 demo data? fortransmart? 
+DB setup for the systems
+impl for shrine maybe? (extend the i2b2 one)
+
+2. GB talks pic sure api
+2.1. genericizes api talking within GB: keep compatibility with transmart rest v2: at the end working as before
+2.2. implements talking to pic sure: at the end working with both pic sure + transmart rest v2 
+-> keep compatiblity becasue that was the original discusion / try to get transmart 17.1 in irct but if not enough time this is as backup
+
+
+- add support for shrine/medco with additional JAR packaged and put in wildfly
+- add systems (by type) with pq-psql functions
+
+
+
+%\subsection{Current Status of Softwares}
+%\subsection{Glowing Bear}
+%desc of how it works

@@ -1,0 +1,46 @@
+\documentclass[11pt,a4paper]{report}
+\input{packages.tex}
+
+% ---- setup ----
+\newcommand{\be }{\begin{itemize}\maketitle}
+\newcommand{\en }{\end{itemize}}
+
+\addbibresource{bibliography.bib}
+
+%\setcounter{secnumdepth}{4}
+%\setcounter{tocdepth}{4}
+
+\setlength{\parskip}{1em}
+
+\begin{document}
+\renewcommand{\bibname}{References}
+
+% ---- title page ---
+\newcommand{\reportTitle}{Milestone 1 Report: Objective 1 System Design}
+\input{title.tex}
+
+% --- table of contents pages ----
+\newpage
+\tableofcontents
+
+% ---- abstract ----
+%\newpage
+%\input{abstract.tex}
+
+% ---- content ----
+\newpage
+\input{chapters/0_intro.tex}
+\input{chapters/1_background_relatedwork.tex}
+\input{chapters/2_system_design_scenario.tex}
+\input{chapters/3_obj1_design.tex}
+
+% ---- appendices ----
+\newpage
+\appendix
+\input{appendices/A_test_deployment_infra.tex}
+
+% ---- bibliography ----
+\newpage
+\printbibliography
+
+\end{document}
