@@ -1,32 +1,34 @@
-\chapter{System Design}
+\chapter{High-Level System Design}
+\label{sec:sysdesign}
 %--> here not the descriptive part (should go to related work / background), but the analytic part
 % only open source tech considered
+
 In the open-source spirit, existing technologies and standard. Maximizing the value of the work. 
 Integrating with existing systems.
-In order to meet the requirements explained section~\ref{sec:requirements}, 
+In order to meet the requirements listed section~\ref{sec:requirements}, 
 
 
 \section{Open-Source Technologies}
 Technologies for this are naturally split in two categories, client (front end) and server (back end) sides.
 In this section we compare and choose the basic building blocks of our solution and how they fit together from a high-level point-of-view.
 
-
 \subsection{Back End Systems: Clinical Research Platforms}
-As stated section~\ref{sec:requirements}, we target compatibility will the main open-source clinical research platforms. 
+As stated section~\ref{sec:requirements}, we target compatibility with the main open-source clinical research platforms. 
 In that area the two main players are \emph{i2b2} and \emph{tranSMART}.
+Less widespread, and building on \emph{i2b2}, also exists \emph{SHRINE} and \emph{MedCo}.
+
+% § about i2b2: why support it
+
+% § about tranSMART: why support it 
+
+% § about MedCo: why support it: keep for obj. 2: \subsubsection{Privacy-Preserving Platform}
 
 what exist there, which one we are targetting the compatibility for and why // descriptive part in related work / background
 + mention pic sure here or in separate subsec?
 
-
-
-% keep for obj. 2
-%\subsubsection{Privacy-Preserving Platform}
-%medco  here, the only one basically (check refs paper)
-
 transmart-rest-api plugin: what is it? no api natively ?
 
-
+checkout/mention more general systems: scidb / elasticsearch / olap-mdx (mdx is the query language, olap the model)-could be envisioned to be supported thorgh pic sure
 
 
 \subsection{Front End System: Cohort Explorers}
@@ -51,7 +53,10 @@ already compatible with 17.1
 --> should conclude with what front end we want to use : GB
 
 \section{System Design Scenario}
-Now that we chose the fundamental building blocks of our solutions, there are two main approaches we can use to assemble them together.
+Now that we chose the fundamental open-source building blocks of our solution, we must fit them together.
+We have two natural approaches to do so: with or without a middle component.
+
+there are two main approaches we can use to assemble them together.
 
 
 Assembling these tools together can take several roads, present them here.
@@ -64,6 +69,8 @@ The final decision
 --> should conclude that we want the scenario 2, i.e. with a backend
 
 then paragraph to introduce the use of pic sure, which is an optional implementation option, but needs investigations -> next section
+
+backend scenario> either implement or use sth existing
 
 
 \subsection{PIC-SURE API \& IRCT Investigations}
