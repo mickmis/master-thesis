@@ -1,0 +1,168 @@
+\chapter{APIs Usage Examples}
+
+This appendix gives examples on how to use some APIs that are referred to in the thesis.
+
+\section{tranSMART REST API v2}
+
+% todo: make better and more
+% todo: contains REAL examples (i.e. real response)
+\subparagraph{List of studies}
+The list of available studies is requested:
+\begin{verbatim}
+GET /v2/studies
+\end{verbatim}
+
+Response:
+\begin{verbatim}
+{
+  "studies": 
+  [
+    {
+      "id": -20,
+      "studyId": "CATEGORICAL_VALUES",
+      "bioExperimentId": -10,
+      "dimensions": 
+      [
+        "concept",
+        "patient",
+        "study"
+      ]
+    },
+    ...
+}
+\end{verbatim}
+
+\subparagraph{Query Terms Tree}
+The tree of the queryable terms is recuperated, with a depth of 2:
+\begin{verbatim}
+GET /v2/tree_nodes?root=&depth=2&tags=true
+\end{verbatim}
+
+Response:
+\begin{verbatim}
+{
+  "tree_nodes":
+    [
+      {
+        "name":"Vital Signs",
+        "fullName":"\Vital Signs\",
+        "name":"Vital Signs",
+        "type":"UNKNOWN",
+        "visualAttributes": ["FOLDER","ACTIVE"], 
+        "children": [
+          {
+            "name":"Heart Rate",
+            "fullName":"\Vital Signs\Heart Rate\",
+            "conceptCode":"VSIGN:HR",
+            "conceptPath":"\Vital Signs\Heart Rate\",
+            "name":"Heart Rate",
+            "type":"NUMERIC",
+            "visualAttributes":["LEAF","ACTIVE","NUMERICAL"],
+            "constraint": {
+              "type": "concept",
+              "conceptCode": "VSIGN:HR"
+            }
+          }
+        ]
+      },
+      ...
+    ]
+}
+\end{verbatim}
+
+\subparagraph{Saved Queries}
+The list of previously saved queries is retrieved:
+\begin{verbatim}
+GET /v2/queries
+\end{verbatim}
+
+Response:
+\begin{verbatim}
+{
+  "id": 1,
+  "name": "testquery",
+  "patientsQuery": {
+    "constraint": {
+      "args": 
+      [
+        {
+          "conceptCode": "birthdate",
+          "conceptPath": "\Demographics\Birth Date\",
+          "fullName": "\Projects\Survey 1\Demographics\Birth Date\",
+          "name": "Birth Date",
+          "type": "concept",
+          "valueType": "DATE"
+        },
+        {
+          "studyId": "SURVEY1",
+          "type": "study_name"
+        }
+      ],
+      "type": "and"
+    },
+    "dimension": "patient",
+    "type": "subselection"
+  },
+  "observationsQuery": {
+    "data": [ ]
+  },
+  "apiVersion": "2.0",
+  "bookmarked": false,
+  "createDate": "2018-03-11T15:30:07Z",
+  "updateDate": "2018-03-11T15:30:07Z"
+}
+\end{verbatim}
+
+
+\subparagraph{Query}
+
+\begin{verbatim}
+POST /v2/observations/counts_per_study_and_concept
+
+{
+  "constraint": {
+    "type": "or",
+    "args": [
+      {
+        "type": "subselection",
+        "dimension": "patient",
+        "constraint": {
+          "type": "and",
+          "args": [
+            {
+              "type": "concept",
+              "conceptCode": "birthdate"
+            },
+            {
+              "type": "study_name",
+              "studyId": "SURVEY1"
+            }
+          ]
+        }
+      },
+      {
+        "type": "subselection",
+        "dimension": "patient",
+        "constraint": {
+          "type": "and",
+          "args": [
+            {
+              "type": "concept",
+              "conceptCode": "O1KP:CAT1"
+            },
+            {
+              "type": "study_name",
+              "studyId": "ORACLE_1000_PATIENT"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+\end{verbatim}
+
+
+\section{PIC-SURE API}
+
+\section{i2b2 API}

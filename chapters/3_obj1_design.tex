@@ -94,7 +94,6 @@ details of in appendix~\ref{sec:docker-images}
 
 
 \subsection{Glowing Bear Modifications}
-% todo: IN BACKGROUND: OVERVIEW OF PIC SURE API TO UNDERSTAND THIS PART
 
 % GB modif overview + why no transmart rest v2
 Glowing Bear is pretty heavily modified, the idea being to make it a native PIC-SURE API client by replacing completely the tranSMART client API implementation. 
@@ -113,35 +112,53 @@ After reviewing what features will be removed from Glowing Bear, the organizatio
     \item Step 3: Export the data
 \end{itemize}
 
+% todo: check, integrate or not
+% PIC SURE vocabulary: entity / concept
+% Here we will use the PIC-SURE vocabulary.
+% Implementation: change the names (concept -> entity)
+% Changes in Glowing Bear take root in the modification of the API calls, that are located in \verb|ResourceService|, this is thus what we take as starting points in this section. 
+% STEP 1: defining the where clauses (and a few count queries)
+% STEP 2: defining the SELECT clauses (what data do we want)
+%Request: modify in resource service
+%response: modify in models
+
+
 \subsubsection{Features Removal}
 
 % studies
 The tranSMART REST API v2 has several calls that are specific to studies, while the PIC-SURE API does not have a direct equivalent to this.
-However the study can be seen as an additional dimension of the data, something that PIC-SURE supports.
-Which means that this transition of studies to the more generic concept of dimension should also be applied in Glowing Bear, i.e. the behavior that is study specific should disappear and be replaced by a behavior specific to a dimension of the data. 
-The following functions are removed:
+However since the studies are completely embedded within the concept tree, i.e. a concept belongs to one study or it is cross-study, they can simply be abstracted into the tree of entities exposed by PIC-SURE.
+It will then be the responsibility of the resource interface to deal with studies, if the resource supports it.
+The following classes, functions and fields are removed:
 \begin{itemize}
-    \item \verb|ResourceService.getStudies()|
-    \item \verb|getcountsperstudyandconcepts|
-    \item \verb|getcount per study|
+    \item \verb|ResourceService.getStudies()| %OK
+    \item \verb|ResourceService.getCountsPerStudyAndConcept()| (replaced by getCounts())
+    \item \verb|ResourceService.getCountsPerStudy()|
+    \item \verb|ConstraintService.studies| %OK
+    \item \verb|ConstraintService.studyConstraints| %OK
+    \item \verb|TreeNodeService.isTreeNodeAStudy()| %OK
+    \item \verb|GbStudyConstraintComponent| %OK
+    % todo: some other things might need removal or modification
 \end{itemize}
 
-tree
+Note that the use of \verb|getCountsPerStudyAndConcept()| and \verb|getCountsPerStudy()| is replaced by the more generic \verb|ResourceService.getCounts()|.
 
-get rid of it: study should just be a node in the tree 
-what about cross-studies terms -> already ok from the tree transmart give?
-
-constraints included in the ontology tree: do not exist in pic sure
-
-study specific can be kept only if it doesnt interfere with the rest? check if that makes sense (can use attributes of ontolog)
-maybe we can make it so that study specific things happens when it's there, but if not it's alright it still work (like visual attributes for i2b2)
-
-
-
-- delete getStudies()
-- isTreeNodeAStudy
-
-
+% --- text of previous version:
+%The study can however be considered as a dimension of the observations, something that can be supported generically through PIC-SURE.
+%Which means that this transition of studies to the more generic concept of dimension should also be applied in Glowing Bear, i.e. the behavior that is study specific should disappear.
+%We rename the module \verb|gb-study-constraint| to \verb|gb-dimension-constraint| to handle constraints based on dimension, if the resource exposes such entities in its tree.
+%In order to keep the name auto-completion feature, the list of possible values for the queried dimension is populated wiht the following query to PIC-SURE:
+% \begin{verbatim}
+% {
+%   "select": [ {
+%     "field": {
+%       "pui": "/<resource>/<path_to_dimension_entity>",
+%       "dataType": "DIMENSION"
+%     },
+%   "alias": "Creatinine%2C%20urine%20%28mg%20per%20dL%29"
+%   } ]
+% }
+% \end{verbatim}
 
 
 \subsubsection{Initialization}
@@ -155,28 +172,12 @@ The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the 
 \paragraph{IRCT Resources Support}
 
 % resources discovery
+After the user has successfully logged in, Glowing Bear requests the list of IRCT resources available and their properties.
+Then the user chooses from the list which resource to use for the current session: it is possible to use only one resource at a time.
+The selected resource and its properties are kept in an object of type \verb|IRCTResource| that stores :
+resources capabilities and such
 
-% enabling / disabling of features according to resource
-
-
-
-PIC-SURE is more generic than the tranSMART API.
-
-2.1. genericizes api talking within GB: keep compatibility with transmart rest v2: at the end working as before
-
-\subsubsection{Enable disable feature of GB }
-incl. the setting of a var of the current resource
-
-features are not eactl disabled, but used only if resource suports it:
-visualattributes
-study (try)
-irct resource object (from json received)
-
-
-
----
-After a user has successfully logged in, the available resources and their capabilities are retrieved
-Note the potential confusion between a PIC-SURE resource, and the resource service in Glowing Bear.
+This information
 
 The function \verb|ResourceService.getResources()| is added to retrieve the PIC-SURE resources. 
 It does the following API call:
@@ -184,7 +185,7 @@ It does the following API call:
 GET /rest/resourceService/resources
 \end{verbatim}
 
-todo: redo exmaple with value predicate 
+%todo: redo example with value predicate 
 Response:
 \begin{verbatim}
 [
@@ -227,170 +228,28 @@ Response:
 \end{verbatim}
 
 
----
-examples of calls and response given
-
-\subparagraph{List of studies}
-The list of available studies is requested:
-\begin{verbatim}
-GET /v2/studies
-\end{verbatim}
-
-Response:
-\begin{verbatim}
-{
-  "studies": 
-  [
-    {
-      "id": -20,
-      "studyId": "CATEGORICAL_VALUES",
-      "bioExperimentId": -10,
-      "dimensions": 
-      [
-        "concept",
-        "patient",
-        "study"
-      ]
-    },
-    ...
-}
-\end{verbatim}
-
-\subparagraph{Query Terms Tree}
-The tree of the queryable terms is recuperated, with a depth of 2:
-\begin{verbatim}
-GET /v2/tree_nodes?root=&depth=2&tags=true
-\end{verbatim}
-
-Response:
-\begin{verbatim}
-{
-  "tree_nodes":
-    [
-      {
-        "name":"Vital Signs",
-        "fullName":"\Vital Signs\",
-        "name":"Vital Signs",
-        "type":"UNKNOWN",
-        "visualAttributes": ["FOLDER","ACTIVE"], 
-        "children": [
-          {
-            "name":"Heart Rate",
-            "fullName":"\Vital Signs\Heart Rate\",
-            "conceptCode":"VSIGN:HR",
-            "conceptPath":"\Vital Signs\Heart Rate\",
-            "name":"Heart Rate",
-            "type":"NUMERIC",
-            "visualAttributes":["LEAF","ACTIVE","NUMERICAL"],
-            "constraint": {
-              "type": "concept",
-              "conceptCode": "VSIGN:HR"
-            }
-          }
-        ]
-      },
-      ...
-    ]
-}
-\end{verbatim}
-
-\subparagraph{Saved Queries}
-The list of previously saved queries is retrieved:
-\begin{verbatim}
-GET /v2/queries
-\end{verbatim}
-
-Response:
-\begin{verbatim}
-{
-  "id": 1,
-  "name": "testquery",
-  "patientsQuery": {
-    "constraint": {
-      "args": 
-      [
-        {
-          "conceptCode": "birthdate",
-          "conceptPath": "\Demographics\Birth Date\",
-          "fullName": "\Projects\Survey 1\Demographics\Birth Date\",
-          "name": "Birth Date",
-          "type": "concept",
-          "valueType": "DATE"
-        },
-        {
-          "studyId": "SURVEY1",
-          "type": "study_name"
-        }
-      ],
-      "type": "and"
-    },
-    "dimension": "patient",
-    "type": "subselection"
-  },
-  "observationsQuery": {
-    "data": [ ]
-  },
-  "apiVersion": "2.0",
-  "bookmarked": false,
-  "createDate": "2018-03-11T15:30:07Z",
-  "updateDate": "2018-03-11T15:30:07Z"
-}
-\end{verbatim}
 
 
-\subparagraph{Query}
+% enabling / disabling of features according to resource
+Using the resource properties returned by IRCT, Glowing Bear has the knowledge of the resource abilities and then enable or disable features that are resource-dependent, through setting configuration variable in TODO.
+The features and conditions for their enabling are the following:
+TODO
 
-\begin{verbatim}
-POST /v2/observations/counts_per_study_and_concept
+PIC-SURE is more generic than the tranSMART API.
 
-{
-  "constraint": {
-    "type": "or",
-    "args": [
-      {
-        "type": "subselection",
-        "dimension": "patient",
-        "constraint": {
-          "type": "and",
-          "args": [
-            {
-              "type": "concept",
-              "conceptCode": "birthdate"
-            },
-            {
-              "type": "study_name",
-              "studyId": "SURVEY1"
-            }
-          ]
-        }
-      },
-      {
-        "type": "subselection",
-        "dimension": "patient",
-        "constraint": {
-          "type": "and",
-          "args": [
-            {
-              "type": "concept",
-              "conceptCode": "O1KP:CAT1"
-            },
-            {
-              "type": "study_name",
-              "studyId": "ORACLE_1000_PATIENT"
-            }
-          ]
-        }
-      }
-    ]
-  }
-}
-\end{verbatim}
+2.1. genericizes api talking within GB: keep compatibility with transmart rest v2: at the end working as before
+
+incl. the setting of a var of the current resource
+
+features are not eactl disabled, but used only if resource suports it:
+visualattributes
+study (try)
+irct resource object (from json received)
+
+
+
 
 getttreenodes used for 2 things: root and browsing
-
-
-    
-
 
 % \subsubsection{Generic API Calls}
 % Originally Glowing Bear has an implementation of the tranSMART REST API v2, which must be replaced by the PIC-SURE API.
@@ -409,26 +268,7 @@ getttreenodes used for 2 things: root and browsing
 % It is implemented as an Angular service in \verb|src/app/services/resource.service.ts|.
 
 
-
-
-
-
-\subsubsection{Communications with the PIC-SURE API}
-PIC SURE vocabulary: entity / concept
-Here we will use the PIC-SURE vocabulary.
-
-Implementation: change the names (concept -> entity)
-
-Changes in Glowing Bear take root in the modification of the API calls, that are located in \verb|ResourceService|, this is thus what we take as starting points in this section. 
-
-STEP 1: defining the where clauses (and a few count queries)
-STEP 2: defining the SELECT clauses (what data do we want)
-
-
-%Request: modify in resource service
-%response: modify in models
-
-\paragraph{Concepts Tree}
+\subsubsection{Concepts Tree}
 
 % modification of request (api call)
 The function \verb|getTreeNodes()| is modified according to the following:
@@ -479,7 +319,7 @@ The \verb|visualattributes| field allows to modify the appearance of the concept
 Its presence is optional so if it is absent, the appearance will stay as it is by default.
 The other fields can easily be mapped to original fields in Glowing Bear.
 
-todo: count used?
+todo: count used? for studies: keep it
 
 % modification of response (model and calling code)
 PIC-SURE does not support the loading of more concept than the direct children, i.e. a depth of 1 is supported.
@@ -863,3 +703,9 @@ todo: transmart cache the ontology because depth can be specified
 implekmentaion of transmart: study as first layer? no just the tree presentede by transmart
 
 define interface for java / sql skeleton for GlowingBearFeatureName (counts, etc.)
+
+
+RI transmart: thourhg the path, if within study: study is queried, if cross-study: no study queried, basically do as the constraint is specifying
++ to find the study associated to a concept, simply go up, or keep in cache a list of studies
+Moreover the tree concept of tranSMART has at its root the studies
+expose in tree as DIMENSION or as STUDY? --> dimension (like this lcinical trial also supported)
