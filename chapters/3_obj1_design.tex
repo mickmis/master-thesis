@@ -7,13 +7,15 @@
 %-Roadmap helps as well
 %Give examples and make them consistent (eg a running example)
 
+% todo: information if someone wants to make a resource compatible with GB: what kind of things it should expose
+
 \chapter{Interoperability Layer for Clinical Research Systems}
 
 In this chapter we are presenting the solution for the first objective of the project:
 setting up an interoperability layer for the main open-source clinical research systems, namely tranSMART, i2b2 and their respective derivations.
 The general design of the solution is first presented, then the steps that are required to implement this system are explained.
 
-\section{Design of the Solution}
+\section{Design of the Interoperability Layer}
 This section describes in details the design of the solution chosen chapter~\ref{sec:sysdesign}. 
 It aims to allow the cohort explorer UI Glowing Bear to support the following systems:
 \begin{itemize}
@@ -65,7 +67,7 @@ put the overall graph + two variants of transmart 17.1 with pic sure or not, if 
 say that it wont query all the resources at once: some may support soem things or not 
 
 
-\section{Implementation of the Design}
+\section{Implementation of the Interoperability Layer}
 Here are described step-by-step the implementation of the solution presented in the last section. 
 Each of the step first explains what is the current status of the relevant components, and then what needs to be modified or implemented.
 roadmap todo
@@ -142,6 +144,7 @@ The following classes, functions and fields are removed:
 \end{itemize}
 
 Note that the use of \verb|getCountsPerStudyAndConcept()| and \verb|getCountsPerStudy()| is replaced by the more generic \verb|ResourceService.getCounts()|.
+% check the html for other things to remove
 
 % --- text of previous version:
 %The study can however be considered as a dimension of the observations, something that can be supported generically through PIC-SURE.
@@ -175,6 +178,7 @@ The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the 
 After the user has successfully logged in, Glowing Bear requests the list of IRCT resources available and their properties.
 Then the user chooses from the list which resource to use for the current session: it is possible to use only one resource at a time.
 The selected resource and its properties are kept in an object of type \verb|IRCTResource| that stores :
+insert functions for this classes
 resources capabilities and such
 
 This information
@@ -367,7 +371,7 @@ QUERY: datatype
 
 study as a data type: exposed in the tree, and webclient knows how to process it 
 
-\subsubsection{Queries}
+\subsubsection{Query Step 1:  Constraints}
 
 % UI query construction (constraints)
 When adding criterion at the step 1, the UI has to know what data type is the entity in order to ask the user more information. Here are the data types supported by Glowing Bear, and the parameters they support no it is the constrains
@@ -388,6 +392,17 @@ MAKE USE OF DIMENSION TYPE
 
 \verb|getCounts()| is merged in \verb|getAggregate()|: the aggregate call to PIC-SURE retrieves (if the resource support it) count, max, min, unique values and average. // concept? check now
 As support for aggregate values is not mandatory for the resources, if the resource does not support it the related features are disabled (more info in section~\ref{sec:featuresdisable}.
+
+originally how GB is checking: it is getting the (<ConceptConstraint>this.constraint).concept.type: this is the object created from the concepts tree
+then the html displays the div according to the concept type: does this by matching against the resource information ]
+put in the details on how to handle the values and all
+
+there should be an auto match, between code and UI stuff , and the type of data
+example: if it has permitted values it is categorical
+if it has some primitive fields the type can be matched against it
+string as well
+
+GOAL: construct the where query, with the proper predicate (we get it from the drag n drop)
 
 
 The API request is:
@@ -477,7 +492,55 @@ DATA type is needed in query
 select operation: for the aggregation
 
 
-\subsubsection{Connectors}
+\subsubsection{Saving a Query}
+
+POST /saveQuery
+json query as payload
+saves the query and returns the query ID
+name the query how?
+
+it then can be reused with the query ID, however not possible to load it in webclient, or list the saved queries.
+--> implement GET /savedQueries/ in IRCT -> send back list of saved queries (name and ID)
+--> implement GET /savedQueries/{id of query} -- returns the json of the query (same as when submitted)]
+--> move that into the IRCT section 
+
+
+define the API here for that, and then where to modify in GB
+
+\subsubsection{Query Step 2:  Data Selection}
+
+
+
+
+\subsubsection{Query Step 3:  Data Export}
+
+GET /resultService/available: returns the list of available results (of the user)
+returns the result id and the status
+<<< GB does first the call to get job list
+
+GET /resultService/resultStatus/ID
+if problem: message field (always try to get it, but can be null)
+if OK, fields are: result id, status, startime, endtime, data type
+
+GET /resultService/availableFormats/ID
+returns list of formats for a specific result
+
+GET /resultService/result/ID/format?download=yes
+download can be put to no (content type will change, set yes for download from browser with clickable link)
+
+
+some formats may not be available, but could be implemented: do match and check with ward/ bo which to support
+
+--> match of the columns? possible to cancel in irct?NO, status returned ? YES
+
+GB original: 
+/file\_formats
+/data\_formats
+
+
+\subsection{IRCT Resources Implementation}
+some to be modified, some to be implemented
+
 - add support for shrine/medco with additional JAR packaged and put in wildfly
 - add systems (by type) with pq-psql functions
 
@@ -500,8 +563,6 @@ last step is transmart 17.1 as connector, because it is if time allows
 %\subsection{Current Status of Softwares}
 %\subsection{Glowing Bear}
 %desc of how it works
-
-\section{pic sure api}
 resource info in db -> example on how to do it with i2b2
 through the api resourceService/resources get us all the resources and their capabilities(by type, but we want query for now i guess?)
 define:
@@ -511,14 +572,44 @@ define:
 -> for GB we would need a minimum set of capabilities??
 
 -> study should become just a parameter of the tree entity, but we shouldnt care about it
- -> how / at which stage implement that in Gb?
+-> how / at which stage implement that in Gb?
 
- edu.harvard.hms.dbmi.bd2k.irct.cl.rest;
- classes implementing the REST API, using javax.ws.rs / JAX-RS: Java API for RESTful Web Services
- 
+edu.harvard.hms.dbmi.bd2k.irct.cl.rest;
+classes implementing the REST API, using javax.ws.rs / JAX-RS: Java API for RESTful Web Services
+
+---
+
+-- irct --
+version from github to select: which? there seem to be a new query param (commit on feb 2) only\_count, which may prove valuable for GB << important question to solve, check out a specific commit? last release is not recent enough as of now 
+
+--> in the queryesrvice, when running query, there is a parameter "only\_count" that exists (in the later version)
+it is added to the metadata of the query, to be processed by the RI (i guess support not mandatory) 
+-> to have less processing, use it from GB!
+
+select aggregate (count), they exist, check out: https://github.com/hms-dbmi/IRCT/blob/ae31f79ef2015bc6ae349e30e2a6652a22141b07/IRCT-RI/src/main/resources/SciDB.sql
+
+aggregate is a type of select, and count is a type of aggregate, totally OK to do that 
 
 
-\section{Glowing Bear}
+
+--Resources--
+does a lib in java to talk to transmart rest v2 exists? would be nice
+
+
+todo: transmart cache the ontology because depth can be specified
+
+implekmentaion of transmart: study as first layer? no just the tree presentede by transmart
+
+define interface for java / sql skeleton for GlowingBearFeatureName (counts, etc.)
+
+
+RI transmart: thourhg the path, if within study: study is queried, if cross-study: no study queried, basically do as the constraint is specifying
++ to find the study associated to a concept, simply go up, or keep in cache a list of studies
+Moreover the tree concept of tranSMART has at its root the studies
+expose in tree as DIMENSION or as STUDY? --> dimension (like this lcinical trial also supported)
+
+
+%NOTES TO SORT%%%%%%%%%%%%%%%%%%%%%%
 resource.service.ts -> this is what implements the api
 study -> only use looks to be to restrict during query
 then it can simply be another dimension of the data, as a constraint, but it is also in the tree, how to do that?
@@ -659,53 +750,11 @@ so here, we use aggregate count, param the list of dimensions we wanna query-ana
 
 
 ---
-runQuery: use POST /runQuery?only\_count&full\_response to get with 1 call the result
+runQuery: use POST /runQuery?only\_count\&full\_response to get with 1 call the result
 --- query step 2: about selecting data  / fields we wanna get from the selected patients / observations 
 
-/file\_formats
-/data\_formats
-
-
---- query step 3: data exports
--> check how it's done by irct
-
---- analysis! check out how it's done
-
-
-
-some features might be disabled according to the availability of backend features
 
 todo: put examples of how a transmart rest v2 query would be using irct, for all of them!
 
 
 
-
-\section{irct}
-version from github to select: which? there seem to be a new query param (commit on feb 2) only\_count, which may prove valuable for GB << important question to solve, check out a specific commit? last release is not recent enough as of now 
-
---> in the queryesrvice, when running query, there is a parameter "only\_count" that exists (in the later version)
-it is added to the metadata of the query, to be processed by the RI (i guess support not mandatory) 
--> to have less processing, use it from GB!
-
-select aggregate (count), they exist, check out: https://github.com/hms-dbmi/IRCT/blob/ae31f79ef2015bc6ae349e30e2a6652a22141b07/IRCT-RI/src/main/resources/SciDB.sql
-
-aggregate is a type of select, and count is a type of aggregate, totally OK to do that 
-
-
-
----
-\subsection{Resources}
-does a lib in java to talk to transmart rest v2 exists? would be nice
-
-
-todo: transmart cache the ontology because depth can be specified
-
-implekmentaion of transmart: study as first layer? no just the tree presentede by transmart
-
-define interface for java / sql skeleton for GlowingBearFeatureName (counts, etc.)
-
-
-RI transmart: thourhg the path, if within study: study is queried, if cross-study: no study queried, basically do as the constraint is specifying
-+ to find the study associated to a concept, simply go up, or keep in cache a list of studies
-Moreover the tree concept of tranSMART has at its root the studies
-expose in tree as DIMENSION or as STUDY? --> dimension (like this lcinical trial also supported)
