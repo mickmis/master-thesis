@@ -177,19 +177,23 @@ The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the 
 % resources discovery
 After the user has successfully logged in, Glowing Bear requests the list of IRCT resources available and their properties.
 Then the user chooses from the list which resource to use for the current session: it is possible to use only one resource at a time.
-The selected resource and its properties are kept in an object of type \verb|IRCTResource| that stores :
-insert functions for this classes
-resources capabilities and such
+The selected resource and its properties are kept in an object of type \verb|IRCTResource| that stores all the information about the resource returned by PIC-SURE (see below the call to \verb|resourceService/resources|).
+It also provides methods that determine if some specific features are supported, which allows some features of Glowing Bear to be enabled or disabled:
+\begin{itemize}
+    \item \verb|supportsCounts()|: returns \emph{true} if queries of type \verb|SELECT COUNT| are supported, which enables the live counts display in the UI
+    \item \verb|supportedCountsDimensions()|: if \verb|supportsCounts()| is \emph{true}, returns the countable dimensions (most commonly \emph{Patients} and \emph{Observations}).
+\end{itemize}
 
-This information
+todo: add for the data types capabilities
 
+
+% resources API call
 The function \verb|ResourceService.getResources()| is added to retrieve the PIC-SURE resources. 
 It does the following API call:
 \begin{verbatim}
 GET /rest/resourceService/resources
 \end{verbatim}
 
-%todo: redo example with value predicate 
 Response:
 \begin{verbatim}
 [
@@ -209,8 +213,8 @@ Response:
             "path": "field code (to be used in query, e.g. ENCOUNTER)",
             "description": "By Encounter",
             "required": true,
-            "dataTypes": [ ],
-            "permittedValues": [ "YES", "NO" ]
+            "dataTypes": [ data type of the value field(s) of this predicate ],
+            "permittedValues": [ permitted values, if it categorical ]
           } ],
         "dataTypes": [ data types to which this predicate applies (e.g. STRING) ],
         "paths": [ paths to which this predicate applies (empty for all) ]
@@ -226,61 +230,21 @@ Response:
         "pattern": "regex to validate the value",
         "description": "description of the data type"
     } ]
-  }
+  },
+  ...
 ]
-    
 \end{verbatim}
-
-
-
-
-% enabling / disabling of features according to resource
-Using the resource properties returned by IRCT, Glowing Bear has the knowledge of the resource abilities and then enable or disable features that are resource-dependent, through setting configuration variable in TODO.
-The features and conditions for their enabling are the following:
-TODO
-
-PIC-SURE is more generic than the tranSMART API.
-
-2.1. genericizes api talking within GB: keep compatibility with transmart rest v2: at the end working as before
-
-incl. the setting of a var of the current resource
-
-features are not eactl disabled, but used only if resource suports it:
-visualattributes
-study (try)
-irct resource object (from json received)
-
-
-
-
-getttreenodes used for 2 things: root and browsing
-
-% \subsubsection{Generic API Calls}
-% Originally Glowing Bear has an implementation of the tranSMART REST API v2, which must be replaced by the PIC-SURE API.
-% In this the original implementation of the API is made generic using abstract classes. 
-% This allows to easily switch between one or the other implementation. This has 2 purposes:
-% Be able to switch back to the implementation of tranSMART without hassle, if it is needed later for something, or if later on something is discovered to be not OK.
-
-% put it in folder in services
-
-% Orignial impl: there are two types of functions, the ones that are common between APIs implementations: \verb|handleError()|, \verb|postCall()|, \verb|getCall()|, \verb|deleteCall()|, \verb|putCall()|
-% And on the other end the ones that are specific to the API: \verb|logout()|, \verb|getStudies()|, \verb|getTreeNodes()|, \verb|getCountsPerStudyAndConcept()|, \verb|getCountsPerStudy()|, \verb|getCounts()|, \verb|getAggregate()|, \verb|getTrialVisits()|, \verb|getPedigreeRelationTypes()|, \verb|getExportDataFormat()|, \verb|getExportFileFormats()|, \verb|getExportJobs()|, \verb|createExportJob()|, \verb|runExportJob()|, \verb|downloadExportJob()|, \verb|cancelExportJob()|, \verb|archiveExportJob()|, \verb|getQueries()|, \verb|saveQuery()|, \verb|updateQuery()|, \verb|deleteQuery()|, \verb|savePatientSet()|.
-% does this step make sense? given other modifs
-
-% The common one are implemented in the abstract super-class ResourceService, while the specific ones are in the children classes \verb|TransmartRESTv2ResourceService| and \verb|PICSUREResourceService|.
-
-% It is implemented as an Angular service in \verb|src/app/services/resource.service.ts|.
 
 
 \subsubsection{Concepts Tree}
 
 % modification of request (api call)
-The function \verb|getTreeNodes()| is modified according to the following:
+The function \verb|ResourceService.getTreeNodes()| is modified according to the following:
 \begin{itemize}
     \item Parameters
     \begin{itemize}
         \item \verb|depth| is removed: PIC-SURE always return a depth of 1
-        \item \verb|hasCounts| is removed: PIC-SURE always return a counts field (filling it or not depend on the resource implementation)
+        \item \verb|hasCounts| is removed: PIC-SURE always return a counts field (filling it or not depend on the resource implementation); additionnally in the current implementation it is never used
         \item \verb|hasTags| is removed: PIC-SURE always return nodes metadata (content is resource dependent)
         \item \verb|relationship| is added: tree browsing is generic in PIC-SURE, relationships between nodes are defined by resource, \verb|child| and \verb|parent| at least are supported
     \end{itemize}
@@ -302,7 +266,7 @@ Response:
     "description": "Concept description",
     "ontology": "Ontology Code",
     "ontologyId": "Concept ID in the ontology",
-    "relationships": [],
+    "relationships": [ supported relationships ],
     "counts": {},
     "dataType": {
       "name": "Data type name",
@@ -318,68 +282,83 @@ Response:
 ]
 \end{verbatim}
 
-The \verb|dataType| field allows to know which constraints defined in the resource can be applied, thus what options can be presented to the user when a query is constructed.
+The \verb|dataType| field allows to know which constraints defined in the resource can be applied, thus what options can be presented to the user when a query is constructed with the help of the \verb|IRCTResource| object, see more details section~\ref{sec:designgbstep1}.
 The \verb|visualattributes| field allows to modify the appearance of the concept in the UI, for example if it's a folder containing concept, or a leaf node. 
-Its presence is optional so if it is absent, the appearance will stay as it is by default.
+Its presence is optional so if it is absent, the appearance will stay as it is by default, this behavior is defined in the \verb|GbTreeNodesComponent| component.
 The other fields can easily be mapped to original fields in Glowing Bear.
-
-todo: count used? for studies: keep it
 
 % modification of response (model and calling code)
 PIC-SURE does not support the loading of more concept than the direct children, i.e. a depth of 1 is supported.
-We must then load in real-time the tree, as the user browses it.
-It introduces a delay when navigating the tree, which could be mitigated by pre-loading in the background the tree, or making use of the customization abilities of IRCT, but this is left as a "nice-to-have" feature.
+To counter this fact, we choose to load the tree at initialization time, which could potentially result in a large number of API calls depending on the size of the tree.
+A potential mitigation to this would be to implement the ability for the PIC-SURE to return a complete tree, but this is left as a "nice-to-have" feature.
+% todo: put it in future work
 
-In \verb|TreeNodeService.loadTreeNodes()| the call to load iteratively load the nodes with \verb|loadTreeNext()| is removed, and only the top nodes are loaded.
-\verb|loadTreeNext()| is modified to load only the direct children.
-processTreenode extract from the json to put into TreeNode object -> modify
+% modification relating no depth call possible
+In \verb|TreeNodeService.loadTreeNodes()|, \verb|loadTreeNext()| is called to iteratively load the nodes.
+\verb|loadTreeNext()| needs to be modified to account for \verb|ResourceService.getTreeNodes()| not being able to load with a depth greater than one, 
+meaning it must be called for every node of the tree.
+The difference between a node and a leaf is made with the use of the \verb|relationships| field: if it has a \verb|CHILD| supported relationships, it is a node for which children can be requested.
+A limit to the depth at which the tree is requested is put in place, with a value that should be experimentally chosen to optimize the user experience.
 
-all the methods in the tree node service is modified to adapt to the structure of the PIC-SURE node. + the constraint service (is it for the query?)
-from constraint: getTreeNodeDescendantsWithExcludedTypes / getConceptFromTreeNode / 
-from query service : 
-- updateProjectionTreeData : tree table? seems like it s for selectingv data in step 2 // shouldnt be modified normally
-- updateTreeNodeCounts: update the counts with query results: shouldnt need modif
-gb-projection component?
-TreeNode represents a node: should be populated accordingly 
-
-loadtree next on click
-
-no model used, directl json
-In TreeNodeService:
-loadTreeNodes
-loadtreenodes loads the root, then calls loadTreeNext to iteratively loads the whole tree with a default depth of 20
-
-can't preload with a depth: either preload everything at startup, or load when click (compromise: load everything with a depth of 2 or 3 and then load at click)
-currently: at click just the count is loaded
+% about format of node JSON
+\verb|TreeNodeService.processTreeNodes()| and \verb|processTreeNode()| process the received JSON to load it into the internal \verb|treeNodes| array containing the tree in memory, they should be adapted to fit the PIC-SURE JSON format.
+This allows all the other parts of Glowing Bear that use the node to access the information needed.
 
 
-TreeNode is an interface: with the right fields the JSON object becomes this interface
-function processTreeNode takes care of that --> can just be modified to fit either transmart or pic sure, easy
-or the json is modified so htat it fits what GB is currently doing (and maybe what GB is currently doing can be enhanced) <<<< do that, avoid as much as possible to modify the stuff 
-
-The function \verb|processTreeNode()|
-
-constraints associated with the tree nodes: basically now 
-
-
-
-QUERY: datatype
-
-
-2.2. implements talking to pic sure: at the end working with both pic sure + transmart rest v2 
-%-> keep compatiblity becasue that was the original discusion / try to get transmart 17.1 in irct but if not enough time this is as backup: describes only the solution with everythin thriough irct
-
-study as a data type: exposed in the tree, and webclient knows how to process it 
-
-\subsubsection{Query Step 1:  Constraints}
+\subsubsection{Query Step 1: Constraints}
 
 % UI query construction (constraints)
-When adding criterion at the step 1, the UI has to know what data type is the entity in order to ask the user more information. Here are the data types supported by Glowing Bear, and the parameters they support no it is the constrains
+When adding criterion at the step 1, the UI has to know what data type is the entity in order to ask the user more information.
+Here are the data types supported by Glowing Bear, and the parameters they support no it is the constrains
 \begin{itemize}
     \item CONTAINS: no field
     \item 
 \end{itemize}
 
+\verb|GbConstraintComponent.onDrop()| processes the node being dropped in the query construction panel by calling \verb|ConstraintService.generateConstraintFromSelectedNode()| to generate the constraint based on the dropped node.
+\verb|ConstraintService.generateConstraintFromSelectedNode()| is modified to accommodate the change from the tranSMART node types to the PIC-SURE data types.
+\begin{itemize}
+    \item \emph{STUDY}: removed, the study is treated as a simple node in the tree (with a dedicated visual attributes)
+    \item \emph{NUMERIC}: the equivalent are all the primitive numeric PIC-SURE data types (\emph{INTEGER}, \emph{DOUBLE}, \emph{FLOAT}, \emph{DOUBLE}, \emph{BYTE})
+    \item \emph{CATEGORICAL}: the equivalent is a data type that has a predefined list of permitted values
+    \item \emph{DATE}: the equivalent are all the primitive date PIC-SURE data types (\emph{DATE}, \emph{DATETIME})
+    \item \emph{TEXT}: the equivalent is the \emph{STRING} data type
+    \item \emph{UNKNOWN}: the equivalent is no data type, the mechanism that recursively combines the sub-nodes (up to depth 6) with an \emph{OR} remains the same
+\end{itemize}
+
+From these nodes are generated the actual constraint that constitutes the query.
+The \verb|ConstraintService.generateConstraintFromConstraintObject()| method originally generates the query constraint based on the constraint coming from the tree.
+It is modified to take as input the data types coming from the PIC-SURE tree, and is using the current \verb|IRCTResource| object to get the constraints corresponding to the data types.
+remove study, only have concepts, write for combinations (and or not) then list for values
+big change in general
+\begin{itemize}
+    \item \emph{Concept}: maps to \emph{CONTAINS} constraint
+    \item \emph{Study}: removed, it is exposed in the tree as another queryable concept, distinguished with its visual attribute for the user
+    \item \emph{AND/OR} and \emph{Negation} : equivalent is the logical operators declared by resource (commonly \emph{AND/OR/NOT})
+    \item \emph{Time}: 
+    \begin{itemize}
+        \item concept with a \emph{DATE} value: maps to nodes with data types \emph{DATE} and \emph{DATETIME}
+        \item for the time dimension of the observations: TBD %TODO
+    \end{itemize}
+    \item \emph{Field / Trial-Visit}: TBD
+    \item \emph{Value}: this depends on the type of the value, refer to the previous paragraph
+    \item \emph{Patient Set}: TBD % importation of patient ids
+    \item \emph{Patient subselection}: todo: how different from patient set
+    \item \emph{True}: everything (not supported)
+    \item \emph{Relation / Pedigree}:???
+\end{itemize}
+
+time: in order to query date in observation (dimension), and also as a value of the concept
+
+
+come back to this after
+
+value is the concept AND the constraint value always (through gb at least)
+subselection is getting the patient dimension
+
+todo: gbconstraintcomponent.updatecounts()
+todo: apply trial visit constraint
+todo: apply observation date constraint
 
 most basic query: where with a PUI
 
@@ -491,28 +470,118 @@ DATA type is needed in query
 
 select operation: for the aggregation
 
+query object in QueryService: modif model to fit PIC SURE queries
+
+ConstraintService.generateSelectionConstraint() : generate constraint with inclusion / exclusion: rename to generateConstraint
+
+
+from constraint: getTreeNodeDescendantsWithExcludedTypes / getConceptFromTreeNode / 
+from query service : 
+- updateProjectionTreeData : tree table? seems like it s for selectingv data in step 2 // shouldnt be modified normally
+- updateTreeNodeCounts: update the counts with query results: shouldnt need modif
+gb-projection component?
 
 \subsubsection{Saving a Query}
+Only the API calls to handle query saving need to be modified, the calling code remains the same.
+The IRCT implementation to save and re-use saved queries is not complete: it is originally possible to only save queries, but not list or load them. 
+See section~\ref{sec:irctsavedqueries} for the additional implementation in IRCT to add these features.
 
-POST /saveQuery
-json query as payload
-saves the query and returns the query ID
-name the query how?
+% saveQuery
+In \verb|ResourceService.saveQuery()| the API request becomes:
+\begin{verbatim}
+POST /rest/queryService/saveQuery
+{
+    "queryName": <query_name>,
+    "query": {
+        <query_body>
+    }
+}    
+\end{verbatim}
 
-it then can be reused with the query ID, however not possible to load it in webclient, or list the saved queries.
---> implement GET /savedQueries/ in IRCT -> send back list of saved queries (name and ID)
---> implement GET /savedQueries/{id of query} -- returns the json of the query (same as when submitted)]
---> move that into the IRCT section 
+Response:
+\begin{verbatim}
+{
+    "queryId": <query_id>
+}    
+\end{verbatim}
 
+% getQueries
+In  \verb|ResourceService.getQueries()| the API request becomes:
+\begin{verbatim}
+GET /rest/queryService/queries
+\end{verbatim}
 
-define the API here for that, and then where to modify in GB
+Response:
+\begin{verbatim}
+{
+    [
+        "queryId": <query_id>,
+        "queryName": <query_name>,
+        "query": {
+            <query_body>
+        }
+    ], [
+        ...
+    ],
+    ...
+}    
+\end{verbatim}
+
+% updateQuery
+In  \verb|ResourceService.updateQuery()| the API request becomes:
+\begin{verbatim}
+PUT /rest/queryService/queries/<query_id>
+{
+    "queryName": <query_name>,
+    "query": {
+        <query_body>
+    }
+}
+\end{verbatim}
+
+Response:
+\begin{verbatim}
+{
+    "message": <status_message>
+} 
+\end{verbatim}
+
+% deleteQuery
+In  \verb|ResourceService.deleteQuery()| the API request becomes:
+\begin{verbatim}
+DELETE /rest/queryService/queries/<query_id>
+\end{verbatim}
+
+Response:
+\begin{verbatim}
+{
+    "message": <status_message>
+} 
+\end{verbatim}
+
 
 \subsubsection{Query Step 2:  Data Selection}
 
+In the PIC-SURE paradigm, this step is about preparing the \emph{select} statement of the query: the output for step 3 is the added \emph{select} causes to the query.
+
+
+%Component orchestrating the step 2 is originally the \verb|GbProjectionComponent|
+
+QueryService.updateCounts_2
+
+
+what do we have form step 1? the counts (osef), 
 
 
 
 \subsubsection{Query Step 3:  Data Export}
+
+
+
+
+
+%Component orchestrating the step 3 is originally the \verb|GbExportComponent|
+
 
 GET /resultService/available: returns the list of available results (of the user)
 returns the result id and the status
@@ -755,6 +824,8 @@ runQuery: use POST /runQuery?only\_count\&full\_response to get with 1 call the 
 
 
 todo: put examples of how a transmart rest v2 query would be using irct, for all of them!
+
+% todo: in irct modifs: add query name to the saved queries / add getQueries that returns the whole queries / add getQuery/id with PUT, DELETE, methods
 
 
 
