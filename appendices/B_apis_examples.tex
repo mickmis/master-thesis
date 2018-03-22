@@ -162,6 +162,117 @@ POST /v2/observations/counts_per_study_and_concept
 }
 \end{verbatim}
 
+\subsection{Glowing Bear Workflow}
+calls:
+--- init step 0
+1. /studies: list of studies, displayed under "Public Studies", some under "Private Studies" (distinction how??), and more, but how exactly are they mapped to the tree?
+
+2. --> they are mapped with call to /tree\_nodes?root=\\ => each of the concept has a studyId to do the mapping
+--> call to /tree\_nodes has also parameters depth --> IRCT only has depth 1, tree traversal in UI might need modifs
+
+3. /queries: list of saved queries returned
+
+4. /jobs: export jobs (running or not) --> not sure how IRCT handles that -> investigate / might need a change
+
+5. /counts\_per\_study\_and\_concept: return counts for all studies / sub things -> see if how to map to irct, either as data or as process?
+
+6. /counts: with param true, to display the total counts available
+
+--- query step 1
+7. /aggregates\_per\_concept : metadata of the concept, to display min max count etc. (aggregate data)
+triggered on drag n drop of concept
+--> use aggregate just as scidb again (so this should be a requirement of GB-or if not feature disabled)
+
+POST /v2/observations/aggregates\_per\_concept
+{constraint: {type: "concept", conceptCode: "O1KP:AGE"}}
+
+{
+  "aggregatesPerConcept": {
+    "O1KP:AGE": {
+      "numericalValueAggregates": {
+        "avg": 51.25,
+        "count": 1200,
+        "max": 65.0,
+        "min": 50.0,
+        "stdDev": 4.147509477069983
+      }
+    }
+  }
+}
+
+
+8. /elements: param contraint: which concept // not sure of what the answer if for?
+GET /v2/dimensions/trial\%20visit/elements
+constraint:{"type":"concept","conceptCode":"O1KP:AGE"}
+
+{
+  "elements": 
+  [
+    {
+      "id": -101,
+      "relTimeLabel": "General",
+      "relTimeUnit": null,
+      "relTime": null
+    }
+  ]
+}
+
+
+starting here possible to change constraints & concepts in UI, then click on update counts:
+9. /counts\_per\_study\_and\_concept: update the counts according to the selected concepts-> return all relevant count (to update the tree) // constraint as param
+POST /v2/observations/counts\_per\_study\_and\_concept
+{
+  "constraint": {
+    "type": "subselection",
+    "dimension": "patient",
+    "constraint": {
+      "type": "and",
+      "args": [
+        {
+          "type": "and",
+          "args": [
+            {
+              "type": "concept",
+              "conceptCode": "O1KP:AGE"
+            },
+            {
+              "type": "value",
+              "valueType": "NUMERIC",
+              "operator": ">=",
+              "value": 55
+            }
+          ]
+        },
+        {
+          "type": "study_name",
+          "studyId": "ORACLE_1000_PATIENT"
+        }
+      ]
+    }
+  }
+}
+
+{
+  "countsPerStudy": {
+    "ORACLE_1000_PATIENT": {
+      "O1KP:AGE": {
+        "observationCount": 100,
+        "patientCount": 100
+      },
+      "O1KP:CAT1": {
+        "observationCount": 100,
+        "patientCount": 100
+      },
+      "O1KP:CAT10": {
+        "observationCount": 100,
+        "patientCount": 100
+      },
+      ......
+    }
+  }
+}
+
+
 
 \section{PIC-SURE API}
 

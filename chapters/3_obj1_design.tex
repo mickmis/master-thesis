@@ -168,8 +168,8 @@ Note that the use of \verb|getCountsPerStudyAndConcept()| and \verb|getCountsPer
 
 \paragraph{Authentication \& Authorization}
 The modification to Glowing Bear is the migration from the authorization protocol OAuth2~\cite{oauth2} to the authentication and authorization protocol OpenID Connect~\cite{openidconnect}.
-IRCT uses OpenID Connect to authenticate and authorize the users of its client applications, while Glowing Bear originally implements the client side of the OAuth2 protocol for authentication with tranSMART. 
-Since OpenID Connect is a layer on top of OAuth2, the modifications to migrate the client code from OAuth2 to OpenID Connect are not significant, and are made by making use of the \emph{oidc-client-js} library~\cite{oidc-client-js}.
+IRCT uses OpenID Connect to authenticate and authorize the users of its client applications, while Glowing Bear originally implements the client side of the OAuth2 protocol for authorization with tranSMART. 
+Since OpenID Connect is a layer on top of OAuth2, the modifications to migrate the client code from OAuth2 to OpenID Connect are not significant, and are made by making use of the \emph{angular-auth-oidc-client} library~\cite{angular-auth-oidc-client}.
 The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the OpenID Connect provider, which will then be embedded in the header of the HTTP requests to IRCT.
 
 \paragraph{IRCT Resources Support}
@@ -177,14 +177,16 @@ The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the 
 % resources discovery
 After the user has successfully logged in, Glowing Bear requests the list of IRCT resources available and their properties.
 Then the user chooses from the list which resource to use for the current session: it is possible to use only one resource at a time.
-The selected resource and its properties are kept in an object of type \verb|IRCTResource| that stores all the information about the resource returned by PIC-SURE (see below the call to \verb|resourceService/resources|).
+The selected resource and its properties are kept in the new \verb|IRCTResourceService| service that keeps and processes all the information about the resource returned by PIC-SURE (see below the call to \verb|resourceService/resources|).
 It also provides methods that determine if some specific features are supported, which allows some features of Glowing Bear to be enabled or disabled:
 \begin{itemize}
     \item \verb|supportsCounts()|: returns \emph{true} if queries of type \verb|SELECT COUNT| are supported, which enables the live counts display in the UI
     \item \verb|supportedCountsDimensions()|: if \verb|supportsCounts()| is \emph{true}, returns the countable dimensions (most commonly \emph{Patients} and \emph{Observations}).
+    \item \verb|supportsNestedClauses()|: returns \emph{true} if the \emph{where} clause predicates \verb|CLAUSE_NEST| and \verb|CLAUSE_UNNEST| allowing nesting are supported
 \end{itemize}
 
-todo: add for the data types capabilities
+todo: add for the data types capabilities, what does it return exactly? predicate?
+todo: add how disabling is done
 
 
 % resources API call
@@ -237,9 +239,10 @@ Response:
 
 
 \subsubsection{Concepts Tree}
+%todo: check consistency for level of details
 
 % modification of request (api call)
-The function \verb|ResourceService.getTreeNodes()| is modified according to the following:
+The API call in \verb|ResourceService.getTreeNodes()| is modified according to the following:
 \begin{itemize}
     \item Parameters
     \begin{itemize}
@@ -307,6 +310,172 @@ This allows all the other parts of Glowing Bear that use the node to access the 
 
 \subsubsection{Query Step 1: Constraints}
 
+% GB overall workflow for queries
+The original Glowing Bear workflow for creating the constraints is the following: \\
+\verb|GbConstraintComponent.onDrop()| processes the node being dropped in the query construction panel in the UI by calling \verb|ConstraintService.generateConstraintFromSelectedNode()| to generate the constraint based on the dropped node. \\
+It uses \verb|ConstraintService.generateConstraintFromConstraintObject()| to construct the individual constraint objects.
+
+The constraints generated in the step 1 of the query corresponds to the \emph{where} clauses of the PIC-SURE query: they define the criterion the resulting data must satisfy.
+It means that this workflow stays the same at a high-level, but its implementation at the low-level undergoes significant changes to bring compatibility with PIC-SURE.
+
+\paragraph{Predicates}
+% generateConstraintFromSelectedNode: dropmode/query: from the saved queries -- dropmode/patient set: simply expose field, as the others // like now it won't be searchable, but queryable through importation of the set
+
+\verb|ConstraintService| is initialized with \verb|IRCTResourceService|: this allows the service to link the data types of the tree nodes with the constraints they support. \\
+\verb|ConstraintService.generateConstraintFromConstraintObject()| is the core method of the constraint generation, and is thus completely re-implemented and is renamed \verb|generateConstraintFromDataType()|.
+It is modified to take as input the data types coming from the PIC-SURE tree, and is using the \verb|IRCTResourceService| to get the constraints corresponding to the data types, returning a \verb|Constraint| object.
+\verb|generateConstraintFromSelectedNode()| is modified to have two cases only: it is a queryable node, i.e. it has a data type, or not. If it has a data type it uses \verb|generateConstraintFromDataType()| to get the constraint, if not it calls itself recursively with the children nodes.
+\verb|generateConstraintFromDataType()| supports the following PIC-SURE data types:
+\begin{itemize}
+\item Primitive
+    \begin{itemize}
+        \item Numeric types: \verb|integer|, \verb|long|, \verb|float|, \verb|double|
+        \item Date types: \verb|date|, \verb|dateTime|
+        \item String type: \verb|string|
+    \end{itemize}
+
+\item Custom
+    \begin{itemize}
+        \item Enumerated type: \verb|enum_value| (enumerated value exposed through the tree and not as a value)
+        \item Ontology concept type: \verb|concept| (simple concept without value)
+        \item Study: \verb|study| (restrict to a specific study)
+    \end{itemize}
+\end{itemize}
+
+% todo: data types list and constraint: because that defines how the method is implemented
+% \begin{itemize}
+%     \item \emph{Concept}: maps to \emph{CONTAINS} constraint
+%     \item \emph{Study}: removed, it is exposed in the tree as another queryable concept, distinguished with its visual attribute for the user
+%     \item \emph{AND/OR} and \emph{Negation} : equivalent is the logical operators declared by resource (commonly \emph{AND/OR/NOT})
+%     \item \emph{Time}: 
+%     \begin{itemize}
+%         \item concept with a \emph{DATE} value: maps to nodes with data types \emph{DATE} and \emph{DATETIME}
+%         \item for the time dimension of the observations: TBD %TODO
+%     \end{itemize}
+%     \item \emph{Field / Trial-Visit}: TBD
+%     \item \emph{Value}: this depends on the type of the value, refer to the previous paragraph
+%     \item \emph{Patient Set}: TBD % importation of patient ids
+%     \item \emph{Patient subselection}: todo: how different from patient set / about selection of dimension 
+%     \item \emph{True}: everything (not supported)
+%     \item \emph{Relation / Pedigree}:???
+% \end{itemize}
+% todo: isObservationDate, 
+
+
+\subparagraph{Predicates Models / Internal Representation}
+% todo title
+
+% constraint models
+The way the constraints are represented internally need modification, as the nature of the tranSMART constraints and the PIC-SURE \emph{where} clauses are slightly different: they are more generic, but more importantly the supported predicate for each data type are known only at the runtime.
+Constraints models in \verb|src/app/models/constraint-models/| are now not based on the type of the constraint, but on the predicate used for the constraint.
+The interface \verb|Constraint| remains, but the members \verb|toQueryObjectWithSubselection()|, \verb|toQueryObjectWithoutSubselection()| and \verb|parent| are removed.
+The equivalent of the subselection in PIC-SURE would be the dimension, but 
+\begin{enumerate*}[label=(\arabic*)]
+  \item it is defined by the resources themselves,
+  \item it is integrated into the \emph{select} clauses, which is handled in the second step as it is not considered a constraint;
+\end{enumerate*}
+justifying the removal of those members.
+
+% constraint models JSON generation example
+\verb|toQueryObject()| takes care of generating the JSON of the constraint: all the implementing methods now needs to generate the PIC-SURE \emph{where} clauses.
+Example of two different \emph{where} clauses that would be produced by the corresponding \verb|toQueryObject()| methods:
+\begin{verbatim}
+{
+    "field": {
+        "pui": "/transmart/study1/Gender/Male/",
+        "dataType": "ENUM_VALUE"
+    },
+    "predicate": "CONTAINS"
+}
+
+{
+    "field": {
+        "pui": "/transmart/study1/Age/",
+        "dataType": "INTEGER"
+    },
+    "predicate": "CONSTRAIN_VALUE_NUMERIC",
+    "fields": {
+        "OPERATOR": "EQ",
+        "CONSTRAINT": "5"
+    }
+}
+\end{verbatim}
+
+% constraint models factory
+\subparagraph{Generating Constraint Objects}
+
+apres le service
+constraints are more generic, but mainly not known in advance: \verb|ConstraintFactoryService| created
+produces Constraint objects / contain regex / name / etc.....
+have a generic one (if constraint is not recognized by GB), but have specialized ones for the ones that are supported
+-> this is handled by the factory, we provide it data type (and predicate or not?), it gives us the model
+
+
+
+
++ combination constraint -> PICSUREWhereClause : put that in logical operators
+
+-> contains array of Constraint, constraint being an abstract class with skeleton and placeholder
+then extend for: 
+get a ConstraintFactoryService that produces properly instanciated constraints
+
+after this is done: check how things are genereated, but should be done for step 1? 
+
+
+% list of types of constraints: PREDICATE
+The supported PIC-SURE data types, with the name of the corresponding Glowing Bear constraint class, are:
+\begin{itemize}
+    \item \verb||
+    
+\end{itemize}
+
+% todo: implementation of the models for each constraint (+ each data type)
+% todo: PATIENT_SET a data type? 
+% todo: add how the where clause is generated + an example
+
+\paragraph{Logical Operators}
+Glowing Bear supports the definition of nested inclusion criteria, with the criteria belonging to the same group being linked by a logical operator \emph{AND} or \emph{OR}.
+PIC-SURE allows queries with several \emph{where} clauses and lets each resource declares the logical operators it supports to link them. 
+However the link between the clauses is flat, a clause defines its relationship with the previous clause: nested queries are not possible natively with PIC-SURE, but a workaround is presented below.
+
+For resources that support nested queries, they declare the support for the \verb|CLAUSE_NEST| and \verb|CLAUSE_UNNEST| predicates for \emph{where} clauses.
+By using these it is possible for resources to support nested queries, see the following example for the methodology:
+Consider the following nested query constructed in Glowing Bear:
+\begin{verbatim}
+    ((H AND B) OR (D AND S)) AND X AND (H OR F)
+\end{verbatim}
+It would have the PIC-SURE query with the following \emph{where} clauses:
+\begin{verbatim}
+{
+    "where": [
+        {"predicate": "CLAUSE_NEST" },
+        {"predicate": "CLAUSE_NEST" },
+        { H },
+        { B, "logicalOperator": "AND" },
+        {"predicate": "CLAUSE_UNNEST" },
+        {"predicate": "CLAUSE_NEST", "logicalOperator": "OR" },
+        { D },
+        { S, "logicalOperator": "AND" },
+        {"predicate": "CLAUSE_UNNEST" },
+        {"predicate": "CLAUSE_UNNEST" },
+        { X, "logicalOperator": "AND" },
+        {"predicate": "CLAUSE_NEST", "logicalOperator": "AND" },
+        { H },
+        { F, "logicalOperator": "AND" },
+        {"predicate": "CLAUSE_UNNEST" }
+    ]
+}
+\end{verbatim}
+
+\verb|CombinationConstraint| and \verb|GbConstraintComponent| are modified so that they disallow nested queries if the resource does not support it.
+This is reflected in the UI by removing the \verb|add criterion| boxes for the attributes with a level equal to or lower than 1.
+\verb|ConstraintService.generateConstraintFromConstraintObject()| is modified so that the (un)nesting \emph{where} clauses are generated when the resource supports it.
+
+
+
+% ---
+
+\paragraph{User Interface}
 % UI query construction (constraints)
 When adding criterion at the step 1, the UI has to know what data type is the entity in order to ask the user more information.
 Here are the data types supported by Glowing Bear, and the parameters they support no it is the constrains
@@ -315,7 +484,6 @@ Here are the data types supported by Glowing Bear, and the parameters they suppo
     \item 
 \end{itemize}
 
-\verb|GbConstraintComponent.onDrop()| processes the node being dropped in the query construction panel by calling \verb|ConstraintService.generateConstraintFromSelectedNode()| to generate the constraint based on the dropped node.
 \verb|ConstraintService.generateConstraintFromSelectedNode()| is modified to accommodate the change from the tranSMART node types to the PIC-SURE data types.
 \begin{itemize}
     \item \emph{STUDY}: removed, the study is treated as a simple node in the tree (with a dedicated visual attributes)
@@ -326,32 +494,17 @@ Here are the data types supported by Glowing Bear, and the parameters they suppo
     \item \emph{UNKNOWN}: the equivalent is no data type, the mechanism that recursively combines the sub-nodes (up to depth 6) with an \emph{OR} remains the same
 \end{itemize}
 
-From these nodes are generated the actual constraint that constitutes the query.
-The \verb|ConstraintService.generateConstraintFromConstraintObject()| method originally generates the query constraint based on the constraint coming from the tree.
-It is modified to take as input the data types coming from the PIC-SURE tree, and is using the current \verb|IRCTResource| object to get the constraints corresponding to the data types.
-remove study, only have concepts, write for combinations (and or not) then list for values
-big change in general
-\begin{itemize}
-    \item \emph{Concept}: maps to \emph{CONTAINS} constraint
-    \item \emph{Study}: removed, it is exposed in the tree as another queryable concept, distinguished with its visual attribute for the user
-    \item \emph{AND/OR} and \emph{Negation} : equivalent is the logical operators declared by resource (commonly \emph{AND/OR/NOT})
-    \item \emph{Time}: 
-    \begin{itemize}
-        \item concept with a \emph{DATE} value: maps to nodes with data types \emph{DATE} and \emph{DATETIME}
-        \item for the time dimension of the observations: TBD %TODO
-    \end{itemize}
-    \item \emph{Field / Trial-Visit}: TBD
-    \item \emph{Value}: this depends on the type of the value, refer to the previous paragraph
-    \item \emph{Patient Set}: TBD % importation of patient ids
-    \item \emph{Patient subselection}: todo: how different from patient set
-    \item \emph{True}: everything (not supported)
-    \item \emph{Relation / Pedigree}:???
-\end{itemize}
+% TODO: not necessarily need to map to preserve features? just go ahead with pic sure supported stuff
+% meaning the special fields and all should be seen from the resource point of view (e.g. study, trial-visit, relation-pedigree)
+% in tree have a special field for displaying things in UI rather than in tree? 
+% although still have the special cases for constraints 
+% take notes of features (tmp) removed (checkboxes for query things)
+% 
+
+
 
 time: in order to query date in observation (dimension), and also as a value of the concept
 
-
-come back to this after
 
 value is the concept AND the constraint value always (through gb at least)
 subselection is getting the patient dimension
@@ -366,9 +519,14 @@ select count
 -> dimension patient? what should be default? observations? 
 -> no default: dimension always specified, because we want to count both patients and observation 
 or the default is observation: and then dimension is specified 
-
 MAKE USE OF DIMENSION TYPE
+This leaves us at a state where the constraints are properly set in \verb|GbConstraintComponent.contraint|.
 
+
+% todo: optimization : \verb|ConstraintService.optimizeContraintObject()|
+
+% todo
+\subsubsection{Query Step 1: Updating Counts}
 \verb|getCounts()| is merged in \verb|getAggregate()|: the aggregate call to PIC-SURE retrieves (if the resource support it) count, max, min, unique values and average. // concept? check now
 As support for aggregate values is not mandatory for the resources, if the resource does not support it the related features are disabled (more info in section~\ref{sec:featuresdisable}.
 
@@ -382,6 +540,8 @@ if it has some primitive fields the type can be matched against it
 string as well
 
 GOAL: construct the where query, with the proper predicate (we get it from the drag n drop)
+runQuery: use POST /runQuery?only\_count\&full\_response to get with 1 call the result
+--- query step 2: about selecting data  / fields we wanna get from the selected patients / observations 
 
 
 The API request is:
@@ -480,6 +640,23 @@ from query service :
 - updateProjectionTreeData : tree table? seems like it s for selectingv data in step 2 // shouldnt be modified normally
 - updateTreeNodeCounts: update the counts with query results: shouldnt need modif
 gb-projection component?
+
+
+
+--> select aggregate
+-> different category of feature enabled disabled is the min/max (because of i2b2) -> this should be quite fine grained, maybe directly associated to the specific function exposed by the resource
+
+SELECT COUNT should be 1 call: no second call to get data
+
+--> this would require a groupb by count basically? maybe that can be passed as a parameter of the select query
+that's where to get this feature enabled, resource needs to have aggregate w/ count, and also another select parameter which for which concepts you want the counts
+
+there is both counts per study, and counts per study and concepts / merge into 1 thing (study becomes a dimension)
+implementation STEP study=dimension
+
+so here, we use aggregate count, param the list of dimensions we wanna query-analog to modifier
+
+/counts
 
 \subsubsection{Saving a Query}
 Only the API calls to handle query saving need to be modified, the calling code remains the same.
@@ -664,6 +841,7 @@ aggregate is a type of select, and count is a type of aggregate, totally OK to d
 --Resources--
 does a lib in java to talk to transmart rest v2 exists? would be nice
 
+todo: i2b2 parsing of and/or check notes
 
 todo: transmart cache the ontology because depth can be specified
 
@@ -677,153 +855,7 @@ RI transmart: thourhg the path, if within study: study is queried, if cross-stud
 Moreover the tree concept of tranSMART has at its root the studies
 expose in tree as DIMENSION or as STUDY? --> dimension (like this lcinical trial also supported)
 
-
-%NOTES TO SORT%%%%%%%%%%%%%%%%%%%%%%
-resource.service.ts -> this is what implements the api
-study -> only use looks to be to restrict during query
-then it can simply be another dimension of the data, as a constraint, but it is also in the tree, how to do that?
---> dimension exposed in the tree sounds good
-
-subsec for mapping API calls
-swubsec on how to implement change in API call: genericsize the calls, get the enabled/disabled features (methods to determine if enabled or not hardcoded), then change the actual things
-
----
-at init: see what features is supported by the resource the user choose to use
-get a list of features that are OK / not OK -- and TODO: add a step of implementing the disabling of some feature
-sth else: seems quite a bit is studies based, this should be abstracted into the resource implementation
-
-calls:
---- init step 0
-1. /studies: list of studies, displayed under "Public Studies", some under "Private Studies" (distinction how??), and more, but how exactly are they mapped to the tree?
-
-2. --> they are mapped with call to /tree\_nodes?root=\\ => each of the concept has a studyId to do the mapping
---> call to /tree\_nodes has also parameters depth --> IRCT only has depth 1, tree traversal in UI might need modifs
-
-3. /queries: list of saved queries returned
-
-4. /jobs: export jobs (running or not) --> not sure how IRCT handles that -> investigate / might need a change
-
-5. /counts\_per\_study\_and\_concept: return counts for all studies / sub things -> see if how to map to irct, either as data or as process?
-
-6. /counts: with param true, to display the total counts available
-
---- query step 1
-7. /aggregates\_per\_concept : metadata of the concept, to display min max count etc. (aggregate data)
-triggered on drag n drop of concept
---> use aggregate just as scidb again (so this should be a requirement of GB-or if not feature disabled)
-
-POST /v2/observations/aggregates\_per\_concept
-{constraint: {type: "concept", conceptCode: "O1KP:AGE"}}
-
-{
-  "aggregatesPerConcept": {
-    "O1KP:AGE": {
-      "numericalValueAggregates": {
-        "avg": 51.25,
-        "count": 1200,
-        "max": 65.0,
-        "min": 50.0,
-        "stdDev": 4.147509477069983
-      }
-    }
-  }
-}
-
---> select aggregate
--> different category of feature enabled disabled is the min/max (because of i2b2) -> this should be quite fine grained, maybe directly associated to the specific function exposed by the resource
-
-SELECT COUNT should be 1 call: no second call to get data
-
-
-8. /elements: param contraint: which concept // not sure of what the answer if for?
-GET /v2/dimensions/trial\%20visit/elements
-constraint:{"type":"concept","conceptCode":"O1KP:AGE"}
-
-{
-  "elements": 
-  [
-    {
-      "id": -101,
-      "relTimeLabel": "General",
-      "relTimeUnit": null,
-      "relTime": null
-    }
-  ]
-}
-
-
-starting here possible to change constraints & concepts in UI, then click on update counts:
-9. /counts\_per\_study\_and\_concept: update the counts according to the selected concepts-> return all relevant count (to update the tree) // constraint as param
-POST /v2/observations/counts\_per\_study\_and\_concept
-{
-  "constraint": {
-    "type": "subselection",
-    "dimension": "patient",
-    "constraint": {
-      "type": "and",
-      "args": [
-        {
-          "type": "and",
-          "args": [
-            {
-              "type": "concept",
-              "conceptCode": "O1KP:AGE"
-            },
-            {
-              "type": "value",
-              "valueType": "NUMERIC",
-              "operator": ">=",
-              "value": 55
-            }
-          ]
-        },
-        {
-          "type": "study_name",
-          "studyId": "ORACLE_1000_PATIENT"
-        }
-      ]
-    }
-  }
-}
-
-{
-  "countsPerStudy": {
-    "ORACLE_1000_PATIENT": {
-      "O1KP:AGE": {
-        "observationCount": 100,
-        "patientCount": 100
-      },
-      "O1KP:CAT1": {
-        "observationCount": 100,
-        "patientCount": 100
-      },
-      "O1KP:CAT10": {
-        "observationCount": 100,
-        "patientCount": 100
-      },
-      ......
-    }
-  }
-}
-
---> this would require a groupb by count basically? maybe that can be passed as a parameter of the select query
-that's where to get this feature enabled, resource needs to have aggregate w/ count, and also another select parameter which for which concepts you want the counts
-
-there is both counts per study, and counts per study and concepts / merge into 1 thing (study becomes a dimension)
-implementation STEP study=dimension
-
-so here, we use aggregate count, param the list of dimensions we wanna query-analog to modifier
-
-/counts
-
-
-
----
-runQuery: use POST /runQuery?only\_count\&full\_response to get with 1 call the result
---- query step 2: about selecting data  / fields we wanna get from the selected patients / observations 
-
-
-todo: put examples of how a transmart rest v2 query would be using irct, for all of them!
+todo transmart: clauses nest / unnest
 
 % todo: in irct modifs: add query name to the saved queries / add getQueries that returns the whole queries / add getQuery/id with PUT, DELETE, methods
 
