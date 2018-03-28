@@ -49,15 +49,69 @@ An instance can be extended using the IRCT Extension (IRCT-EXT) that provides ho
 Finally the Resource Interface (IRCT-RI) connects to the different resources through connectors.
 
 
-https://www.nature.com/articles/sdata201696
-http://dbmi.hms.harvard.edu/news/datathon-hackathon-sep-14-15
-info about hackaton: dana farber is looking for i2b2 frontend replacement 
+%https://www.nature.com/articles/sdata201696
+%http://dbmi.hms.harvard.edu/news/datathon-hackathon-sep-14-15
+%info about hackaton: dana farber is looking for i2b2 frontend replacement 
 
-% todo: IN BACKGROUND: OVERVIEW OF PIC SURE API TO UNDERSTAND THIS PART (as in technical overview)
-Note the potential confusion between a PIC-SURE resource, and the resource service in Glowing Bear.
+% notes on irct 
+%PREDICATE MANDATORY in query
+%DATA type is needed in query
 
-todo: vocabulary
+\paragraph{Technical Background}
+PIC-SURE is resource based: each source of data (e.g. i2b2, tranSMART, etc.) is considered a resource.
+Each of these resource declare through their configuration the kind of clauses they support. 
+The configuration is done through the database.
+Four types of clauses are supported: \emph{select}, \emph{where}, \emph{process} and \emph{join}, but here we are mainly making use of \emph{select} and \emph{where}.
 
+% select
+The \emph{select} clauses specify the data that the user of the API wants extracted from the database.
+The resources declare what kind of operations their \emph{select} support, for example \emph{AGGREGATE} can be defined to extract aggregated values.
+Then each of the operations (or the default operation when none is declared), declare the fields they support.
+For \emph{AGGREGATE}, the resource could declare two fields:
+\begin{itemize}
+    \item \emph{FUNCTION}: what function to use among a list of permitted values, e.g. \emph{COUNT}, \emph{MIN}, \emph{MAX}
+    \item \emph{DIMENSION}: the dimension along which to do to the aggregation, e.g. \emph{PATIENT}
+\end{itemize}
+Each of the fields declare the type of value they take: either an enumerated value, or a data type such as \emph{String} or \emph{Integer} that has to specify the Java class implementing it.
+Example of two \emph{select} clauses:
+\begin{verbatim}
+"select": [ {
+    "operation": "AGGREGATE",
+    "fields": {
+        "FUNCTION": "COUNT",
+        "DIMENSION": "PATIENT"
+    }
+}, {
+    "field": {
+        "pui": "/resource/study/Age/",
+        "dataType": "INTEGER"
+    }
+} ]
+\end{verbatim}
+
+% where 
+The other main clause supported is \emph{where} and is used to specified constraints on the data to be selected.
+Just like for \emph{select} and the supported operations, the resource declares the predicates that \emph{where} supports.
+The predicates can have fields, and fields have a type: this is just like \emph{select}. 
+Example:
+\begin{verbatim}
+"where": [ {
+    "field": {
+        "pui": ""/resource/study/Age/"",
+        "dataType": "INTEGER"
+    },
+    "predicate": "CONSTRAIN_VALUE_NUMERIC",
+    "fields": {
+        "OPERATOR": ">=",
+        "CONSTRAINT": "20"
+    }
+} ]
+\end{verbatim}
+
+% tree
+In order to construct queries made of the clauses previously described, the resources expose a tree of entities.
+Each of those entities, if they are queryable, declare a data type.
+Each of the predicates used for the \emph{where} clauses also declare one or more supported data types: this is the mechanism used to know which entities support which predicates.
 
 \subsection{Cohort Exploration Front Ends}
 \subsubsection{Glowing Bear}
