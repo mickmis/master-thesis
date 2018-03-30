@@ -1,6 +1,5 @@
 % todo: information if someone wants to make a resource compatible with GB: what kind of things it should expose
 % todo: diagram include third-party for auth
-% todo: avoid generic titles
 
 \chapter{Interoperability Layer for Clinical Research Systems}
 
@@ -9,11 +8,9 @@ setting up an interoperability layer for the main open-source clinical research 
 The general design of the solution is first presented, then the steps that are required to implement this system are explained.
 
 \section{Design of the Interoperability Layer}
-% todo: here give the big picture
-% todo: give a roadmap
-% todo: integrate running exmaple? the query below works well?
+% todo: integrate running example? the query below works well?
 
-This section describes in details the design of the solution chosen chapter~\ref{sec:sysdesign}. 
+This section describes in details the design of the solution chosen chapter~\ref{sec:sysdesign}.
 It aims to allow the cohort explorer UI Glowing Bear to support the following systems:
 \begin{itemize}
     \item i2b2
@@ -22,7 +19,7 @@ It aims to allow the cohort explorer UI Glowing Bear to support the following sy
     \item tranSMART 16.2 (REST API v1)
 \end{itemize}
 
-Because of the fundamental differences in the APIs, it is not possible to browse at the same time. 
+Because of the fundamental differences in the APIs, it is not possible to browse and query several resources at the same time, we thus restrict the scope to using one system at the time, but having compatibility with different ones.
 After being logged in, the user is able to choose from which resource do the queries.
 A resource is defined as an instance of one the supported systems.
 
@@ -36,22 +33,25 @@ We can see that IRCT acts as a back end component for Glowing Bear, all its comm
     \label{fig:sysdiagramobj1}
 \end{figure}
 
-todo: say that it wont query all the resources at once: some may support soem things or not 
+\subsection{General Workflow}
+
+The general workflow of the system starts in Glowing Bear.
+The users logs in using XXX TBD.
+Then a specific IRCT resource is selected for the rest of the operations of this session.
+The user browses the tree of entities to construct query constraints using the PIC-SURE API.
+Each resource exposes this tree however it wants, but always within sticking to a common interface.
+When the constraints for selecting patients are established, the user chooses what data to export.
+During those last operations, the counts corresponding to the query are updated dynamically with background requests to IRCT, which itself does requests to the resources with their native API.
+Finally once the full query is constructed, the user executes the final query and is able to download the results, again using one common API.
 
 
-
-\paragraph{Interoperability Layer}
-
-\paragraph{Connectors}
-what is supported for each connector
-GB enable disable stuff
-
-\paragraph{Authentication \& Authorization}
-TBD: the authentication \& authorization still needs to be decided.
+\subsection{Authentication \& Authorization}
+TBD: the authentication \& authorization design still needs to be decided
 
 %The authentication and authorization is delegated to a third-party using the OpenID Connect protocol~\cite{openidconnect}.
 
-\subsection{Glowing Bear API calls}
+
+\subsection{Glowing Bear Queries}
 
 One of the main implementation challenge is replacing in Glowing Bear the tranSMART API v2 by the PIC-SURE API.
 In Glowing Bear, all the operations the user undertakes have the objective of constructing a query to select data.
@@ -164,3 +164,32 @@ POST /rest/queryService/runQuery?full_response
 }
 \end{verbatim}
 
+We observe that the tranSMART API v2 uses a \emph{subselection} of patients to specify the constraints, and then the additional constraints (linked together by an \emph{OR}, and with the subselection by an \emph{AND}) are used to select the data to be exported.
+To pursue the same objective, PIC-SURE uses \emph{where} clauses for specifying constraints and \emph{select} clauses to select the data to be exported.
+
+
+\subsection{Back End Systems}
+
+% baseline
+IRCT communicates with all of the supported back end systems using their native APIs.
+The compatible resources expose their tree of concept of concepts, which contain the information on how to construct queries.
+They support the following basic query types, based on a specific set of constraints:
+\begin{itemize}
+    \item Count queries: number of matching patients
+    \item Patient set queries: identifiers on matching patients
+    \item Data queries: any kind of medical data about the matching patients
+\end{itemize}
+
+The constraints used can be:
+\begin{itemize}
+    \item Concept constraints: presence of a specific ontology item for a patient
+    \item Value constraints: some numeric, text or date value satisfying some constraints
+\end{itemize}
+
+% additional features
+Some features specific to some back end systems are supported only when using this system.
+This is the case for systems implementing the tranSMART API v2:
+\begin{itemize}
+    \item Constraints based on studies / clinical trials
+    \item Constraints based on pedigree / relation type
+\end{itemize}

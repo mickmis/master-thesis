@@ -1,12 +1,8 @@
 \section{Implementation of the Interoperability Layer}
 Here are described step-by-step the implementation of the solution presented in the last section. 
 Each of the step first explains what is the current status of the relevant components, and then what needs to be modified or implemented.
-roadmap todo
-%nature of the thing-> should be test-driven
-
-
-first target: most basic form, tree used to make queries
-
+% todo: nature of the thing-> should be test-driven
+% todo: give a roadmap
 
 \subsection{Deploying Original Components}
 First we are deploying an instance of IRCT, with an instance of i2b2 and tranSMART 16.2 which are both natively supported. 
@@ -80,6 +76,7 @@ After reviewing what features will be removed from Glowing Bear, the organizatio
 
 
 \subsubsection{Authentication \& Authorization}
+% todo: possibly redo this part after feedback from ward
 
 The modification to Glowing Bear is the migration from the authorization protocol OAuth2~\cite{oauth2} to the authentication and authorization protocol OpenID Connect~\cite{openidconnect}.
 IRCT uses OpenID Connect to authenticate and authorize the users of its client applications, while Glowing Bear originally implements the client side of the OAuth2 protocol for authorization with tranSMART. 
@@ -87,6 +84,7 @@ Since OpenID Connect is a layer on top of OAuth2, the modifications to migrate t
 The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the OpenID Connect provider, which will then be embedded in the header of the HTTP requests to IRCT.
 
 \subsubsection{IRCT Resources Support}
+% todo: summary of GB supports for predicates / operations
 
 \paragraph{Resources List}
 After the user has successfully logged in, Glowing Bear requests the list of IRCT resources available and their properties.
@@ -146,10 +144,14 @@ Response:
     \item \verb|supportedCountsDimensions()|: if \verb|supportsCounts()| is \emph{true}, returns the countable dimensions (most commonly \emph{Patients} and \emph{Observations}).
     \item \verb|supportsNestedClauses()|: returns \emph{true} if the \emph{where} clause predicates \verb|CLAUSE_NEST| and \verb|CLAUSE_UNNEST| allowing nesting are supported
     \item \verb|| supports: min, max (others needed for GB?)
-    \item \verb|supportsStudies()|: returns \emph{true} is queries of type \verb|SELECT STUDIES| are supporter
+    \item \verb|supportsStudies()|: returns \emph{true} if queries of type \verb|SELECT STUDIES| are supported (todo: also clinical trials) (todo: also constraint or not)
+    \item \verb|supportsPedigrees()|: returns \emph{true} if constraints based on pedigrees are supported
+    \item \verb|supportsGetTreeWithDepth()|: returns \emph{true} if the tree can be retrieved with a specified depth (if the resource declare a tree relationship as \verb|CHILDREN-DEPTH-X|)
 \end{itemize}
 
 % todo: add for the data types capabilities, what does it return exactly? predicate?
+% todo: add for shrine the only count (ie data export not supported)
+
 
 \subparagraph{Studies}
 
@@ -170,23 +172,19 @@ POST /rest/queryService/runQuery?full_response
 }
 \end{verbatim}
 
+% todo: add pedigree (luke test to see how it works)
+
 
 
 \subsubsection{Concepts Tree}
 \label{sec:gb-tree}
-%todo: check consistency for level of details
+% todo: check consistency for level of details
 
 % modification of request (api call)
 The API call in \verb|ResourceService.getTreeNodes()| is modified according to the following:
 \begin{itemize}
-    \item Parameters
-    \begin{itemize}
-        \item \verb|depth| is removed: PIC-SURE always return a depth of 1
-        \item \verb|hasCounts| is removed: PIC-SURE always return a counts field (filling it or not depend on the resource implementation); additionnally in the current implementation it is never used
-        \item \verb|hasTags| is removed: PIC-SURE always return nodes metadata (content is resource dependent)
-        \item \verb|relationship| is added: tree browsing is generic in PIC-SURE, relationships between nodes are defined by resource, \verb|child| and \verb|parent| at least are supported
-    \end{itemize}
-    \item 
+     \item \verb|depth| parameter is replaced by \verb|relationship|: if the resource supports the retrieval of nodes with a depth more than one, then it will be achieved through a specific entities relationship API call \verb|CHILDREN-DEPTH-X|; 
+    \item parameters \verb|hasCounts| and \verb|hasTags| are removed (these fields are always returned, although can be empty according to the resource implementation)
 \end{itemize}
 
 The API request becomes:
@@ -225,17 +223,11 @@ The \verb|visualattributes| field allows to modify the appearance of the concept
 Its presence is optional so if it is absent, the appearance will stay as it is by default, this behavior is defined in the \verb|GbTreeNodesComponent| component.
 The other fields can easily be mapped to original fields in Glowing Bear.
 
-% modification of response (model and calling code)
-PIC-SURE does not support the loading of more concept than the direct children, i.e. a depth of 1 is supported.
-To counter this fact, we choose to load the tree at initialization time, which could potentially result in a large number of API calls depending on the size of the tree.
-A potential mitigation to this would be to implement the ability for the PIC-SURE to return a complete tree, but this is left as a "nice-to-have" feature.
-% todo: put it in future work
-
 % modification relating no depth call possible
 In \verb|TreeNodeService.loadTreeNodes()|, \verb|loadTreeNext()| is called to iteratively load the nodes.
-\verb|loadTreeNext()| needs to be modified to account for \verb|ResourceService.getTreeNodes()| not being able to load with a depth greater than one, meaning it must be called for every node of the tree.
-The difference between a node and a leaf is made with the use of the \verb|relationships| field: if it has a \verb|CHILD| supported relationships, it is a node for which children can be requested.
-A limit to the depth at which the tree is requested is put in place, with a value that should be experimentally chosen to optimize the user experience.
+\verb|loadTreeNext()| needs to be modified to account for \verb|ResourceService.getTreeNodes()| possibly not being able to load with a depth greater than one, meaning it must be called for every node of the tree.
+This is determined using \verb|IRCTResourceService.supportsGetTreeWithDepth()|.
+The difference between a node and a leaf is made with the use of the \verb|relationships| field: if the node supports the relationship \verb|CHILD|, it is a node for which children can be requested.
 
 % about format of node JSON
 \verb|TreeNodeService.processTreeNodes()| and \verb|processTreeNode()| process the received JSON to load it into the internal \verb|treeNodes| array containing the tree in memory, they should be adapted to fit the PIC-SURE JSON format.
@@ -253,31 +245,33 @@ The constraints generated in the step 1 of the query corresponds to the \emph{wh
 The components based on \verb|modules/gb-data-selection-module/constraint-component/GbConstraintComponent| and the models based on \verb|models/constraint-models/Constraint| correspond to the different PIC-SURE predicates that Glowing Bear supports.
 Overall the Glowing Bear workflow stays the same at a high-level, but its implementation at the low-level undergoes significant changes to bring compatibility with PIC-SURE.
 
-\paragraph{Constraints Logic}
-\label{sec:gb-predicates}
-
+% logic
 \verb|ConstraintService| is initialized with \verb|IRCTResourceService|: this allows the service to link the data types of the tree nodes with the constraints they support. \\
 \verb|ConstraintService.generateConstraintFromConstraintObject()| is the core method of the constraint generation, and is thus completely re-implemented and is renamed \verb|generateConstraintFromDataType()|.
 It is modified to take as input the data types coming from the PIC-SURE tree, and is using the \verb|IRCTResourceService| to get the constraints corresponding to the data types, returning a \verb|Constraint| object.
 \verb|generateConstraintFromSelectedNode()| is modified to have two cases only: it is a queryable node, i.e. it has a data type, or not. If it has a data type it uses \verb|generateConstraintFromDataType()| to get the constraint, if not it calls itself recursively with the children nodes.
+
+% data types supported
 \verb|generateConstraintFromDataType()| supports the following PIC-SURE data types:
 \begin{itemize}
 \item Primitive
     \begin{itemize}
-        \item Numeric types: \verb|integer|, \verb|long|, \verb|float|, \verb|double|
-        \item Date types: \verb|date|, \verb|dateTime|
-        \item String type: \verb|string|
+        \item Numeric types: \verb|INTEGER|, \verb|LONG|, \verb|FLOAT|, \verb|DOUBLE|
+        \item Date types: \verb|DATE|, \verb|DATETIME|
+        \item String type: \verb|STRING|
     \end{itemize}
 
 \item Custom
     \begin{itemize}
-        \item Enumerated type: \verb|enum_value| (enumerated value exposed through the tree and not as a value)
-        \item Ontology concept type: \verb|concept| (simple concept without value)
-        \item Study: \verb|study| (restrict to a specific study)
+        \item Enumerated type: \verb|ENUM_FIELD| and \verb|ENUM_VALUE| (enumerated value exposed through the tree and not as a value)
+        \item Ontology concept type: \verb|CONCEPT| (simple concept without value)
+        \item Study: \verb|STUDY| (restrict to a specific study)
+        \item Pedigree: \verb|PEDIGREE| (constraint based on relationship, e.g. parents of another selection of patients)
     \end{itemize}
 \end{itemize}
 
-\subparagraph{\emph{where} Models}
+
+\paragraph{\emph{where} Models}
 
 % constraint models
 The way the constraints are represented internally need modification, as the nature of the tranSMART constraints and the PIC-SURE \emph{where} clauses are slightly different: they are more generic, but more importantly the supported predicate for each data type are known only at the runtime.
@@ -316,31 +310,138 @@ Example of two different \emph{where} clauses that would be produced by the corr
 }
 \end{verbatim}
 
-% constraint models factory
-\subparagraph{Instantiating Constraints}
+
+% ----------------------------------------------------------------------------------
+\paragraph{Instantiating Constraints}
 Because the predicates and the fields they have are known only at runtime, we create a service \verb|ConstraintFactoryService| that handles the instantiating of properly initialized \verb|Constraint| objects.
 A method \verb|createConstraint()| taking as parameters the data type and and predicate returns the \verb|Constraint| object.
 While some pre-defined predicates are supported by Glowing Bear (see list \ref{todo}), or even required for some features, not all can be supported. 
 For this reason a generic \verb|Constraint| is created, that allows Glowing Bear to handle unknown constraints that resources might declare.
 
-% list of types of constraints: PREDICATE
+% list of types of constraints, based on the predicate they support
 The difference constraint models with their associated predicate, that together support all the PIC-SURE data types listed in~\ref{sec:gb-predicates}, are listed below:
 \begin{itemize}
-    \item \verb|ContainsConstraint|: predicate \verb|CONTAINS|, valid for \verb|enum_value|, \verb|study|, \verb|concept| 
-    \item \verb|NumericValueConstraint|: predicate \verb|CONSTRAIN_VALUE_NUMERIC|
-    \item \verb|StringValueConstraint|: predicate \verb|CONSTRAIN_VALUE_STRING|
-    \item \verb|DateValueConstraint|: predicate \verb|CONSTRAIN_VALUE_DATE| (when a concept has a date value)
-    \item \verb|DateConstraint|: predicate \verb|CONSTRAINT_DATE| (when temporal data is filtered by date, e.g. the obervation date)
-    % todo: patient set? clinical-trial visit? relation/pedigree?
+    \item \verb|ConceptConstraint|: predicate \verb|CONSTRAINT_CONCEPT|, valid for \verb|ENUM_FIELD|, \verb|ENUM_VALUE|, \verb|CONCEPT| and all primitive types 
+    \item \verb|FieldConstraint|: predicate \verb|CONSTRAINT_FIELD|, valid for arbitrary values of fields in dimensions (e.g. data types \verb|STUDY|, \verb|TRIAL_VISIT|), and used to create constraint based on observation date
+    \item \verb|PedigreeConstraint|: predicate \verb|CONSTRAINT_PEDIGREE|, valid for pedigree data types
+    \item \verb|PatientSetConstraint|: predicate \verb|CONSTRAINT_PATIENT_SET|, valid for patient set (imported through the UI)
 \end{itemize}
 
+Note that \verb|StudyConstraint| and \verb|TrialVisitConstraint| are merged within the new \verb|FieldConstraint|, similarly \verb|GbStudyConstraintComponent| into the new \verb|GbFieldConstraintComponent|.
+The trial-visit logic form \verb|GbConceptConstraintComponent| is moved to \verb|GbFieldConstraintComponent|.
+Note also that not all constraints are supported by all resources, the support is known by using \verb|IRCTResourceService.supports*()| methods. 
 
+\subparagraph{Concept Constraint}
+This is a simple constraint based on the presence of a concept and possibly its associated value.
+A change from the original behavior is the way the values of the enumerated field are recuperated: this is done through the tree by looking at the data types, enumerated fields have a \verb|ENUM_FIELD| types, and its possible values are children of the node with the type \verb|ENUM_VALUE|.
+Another change concerns the aggregates values, see~\ref{sec:gb-step1-aggregates} for more information.
+The supported operators are \verb|==|, \verb|<=|, \verb|>=|, \verb|<|, \verb|>|, \verb|LIKE[exact]|, \verb|LIKE[begin]|, \verb|LIKE[end]| and \verb|LIKE[contains]|.
+
+Example of concept \emph{where} clauses:
+\begin{verbatim}
+{
+    "where": [ {
+            "field": {
+                "pui": "/transmart/study1/Age/",
+                "dataType": "INTEGER"
+            },
+            "predicate": "CONSTRAIN_CONCEPT", 
+            "fields": { "OPERATOR": ">=", "VALUE":"20" } 
+        }, {
+            "field": {
+                "pui": "/transmart/study1/Age/",
+                "dataType": "INTEGER"
+            },
+            "predicate": "CONSTRAIN_CONCEPT", 
+            "fields": { "OPERATOR": "<=", "VALUE":"25" },
+            "logicalOperator": "AND"
+        }, {
+            "field": {
+                "pui": "/transmart/study1/Gender/Male/",
+                "dataType": "ENUM_VALUE"
+            },
+            "predicate": "CONSTRAIN_CONCEPT"
+        } ]
+}
+\end{verbatim}
+
+\subparagraph{Field Constraint}
+This new constraint allows to restrict according to the value of field in some dimension of the data.
+It allows to query for a study, clinical-trial visit, observation date, and others.
+It is implemented in the constraint model \verb|FieldConstraint| and the component \verb|GbFieldConstraintComponent|.
+
+Example of field \emph{where} clauses generated:
+\begin{verbatim}
+{
+    "where": [ {
+            "predicate": "CONSTRAIN_FIELD", 
+            "fields": { 
+                "DIMENSION": "study", "FIELD":"study_id", 
+                "OPERATOR": "==", "VALUE": "ORACLE_1000_PATIENT" 
+            } 
+        }, {
+            "predicate": "CONSTRAIN_FIELD", 
+            "fields": { 
+                "DIMENSION": "trial_visit", "FIELD":"rel_time_num", 
+                "OPERATOR": "==", "VALUE": "2" 
+            },
+            "logicalOperator": "AND"
+        }, {
+            "predicate": "CONSTRAIN_FIELD", 
+            "fields": { 
+                "DIMENSION": "observation", "FIELD":"start_date", 
+                "OPERATOR": "<=", "VALUE": "2010-02-22" 
+            },
+            "logicalOperator": "AND"
+        } ]
+}
+\end{verbatim}
+
+\subparagraph{Pedigree Constraint}
+Constraints based on pedigree are special in that they are based on other constraints (e.g. getting the parents of patients aged more than 50).
+We add for them a predicate \verb|CONSTRAINT_PEDIGREE|, which has three fields:
+\begin{itemize}
+    \item \verb|TYPE|, required: list of permitted values which are either the type of pedigree (parents of, siblings of, etc.) or the indicator of the end of the pedigree constraints \verb|CONSTRAINT_END| (see example after)
+    \item \verb|BIOLOGICAL|, optional, default to \verb|BOTH|: either \verb|YES|, \verb|NO| or \verb|BOTH|
+    \item \verb|SHARE_HOUSEHOLD|, optional, default to \verb|BOTH|: either \verb|YES|, \verb|NO| or \verb|BOTH|
+\end{itemize}
+
+Example of a pedigree \emph{where} clause:
+\begin{verbatim}
+{
+    "where": [
+        {"predicate": "CONSTRAINT_PEDIGREE", "fields": { "TYPE": "PARENTS_OF", "BIOLOGICAL":"YES" } },
+        <classic constraints>..., 
+        {"predicate": "CONSTRAINT_PEDIGREE", "fields": { "TYPE": "CONSTRAINT_END" } }
+    ]
+}
+\end{verbatim}
+
+Similarly to other constraints, the logic construction is implemented into \verb|GbPedigreeConstraintComponent| and the model representing such a constraint is \verb|PedigreeConstraint|.
+only enabled \verb|IRCTResourceService.supportsPedigree()|
+
+\subparagraph{Patient Set Constraint}
+Through the UI, the user of Glowing Bear can import a patient set and use it as a constraint, this handled by \verb|GbPatientSetConstraintComponent| and stored into a model \verb|PatientSetConstraint|, which are modified to adapt to the PIC-SURE format.
+It supports either an array of patient identifiers, or the identifier of a patient set.
+
+Example of patient set \emph{where} clauses:
+\begin{verbatim}
+{
+    "where": [
+        {"predicate": "CONSTRAINT_PATIENT_SET", "fields": { "PATIENT_SET_ID": "52" } },
+        {"predicate": "CONSTRAINT_PATIENT_SET", "fields": { "PATIENT_IDS": "[2, 32, 96]" } }
+    ]
+}
+\end{verbatim}
+
+
+% ----------------------------------------------------------------------------------
 \paragraph{Logical Operators}
 Glowing Bear supports the definition of nested inclusion criteria, with the criteria belonging to the same group being linked by a logical operator \emph{AND} or \emph{OR}.
 PIC-SURE allows queries with several \emph{where} clauses and lets each resource declares the logical operators it supports to link them. 
 However the link between the clauses is flat, a clause defines its relationship with the previous clause: nested queries are not possible natively with PIC-SURE, but a workaround is presented below.
 
-For resources that support nested queries, they declare the support for the \verb|CLAUSE_NEST| and \verb|CLAUSE_UNNEST| predicates for \emph{where} clauses.
+For resources that support nested queries, they declare the support for the \verb|NESTING| predicate, having a field called \verb|TYPE| with the permitted values \verb|START| and \verb|END|.
 By using these it is possible for resources to support nested queries, see the following example for the methodology:
 Consider the following nested query constructed in Glowing Bear:
 \begin{verbatim}
@@ -350,40 +451,51 @@ It would have the PIC-SURE query with the following \emph{where} clauses:
 \begin{verbatim}
 {
     "where": [
-        {"predicate": "CLAUSE_NEST" },
-        {"predicate": "CLAUSE_NEST" },
+        {"predicate": "NESTING", "fields": { "type": "START" } },
+        {"predicate": "NESTING", "fields": { "type": "START" } },
         { H },
         { B, "logicalOperator": "AND" },
-        {"predicate": "CLAUSE_UNNEST" },
-        {"predicate": "CLAUSE_NEST", "logicalOperator": "OR" },
+        {"predicate": "NESTING", "fields": { "type": "END" } },
+        {"predicate": "NESTING", "fields": { "type": "START" }, "logicalOperator": "OR" },
         { D },
         { S, "logicalOperator": "AND" },
-        {"predicate": "CLAUSE_UNNEST" },
-        {"predicate": "CLAUSE_UNNEST" },
+        {"predicate": "NESTING", "fields": { "type": "END" } },
+        {"predicate": "NESTING", "fields": { "type": "END" } },
         { X, "logicalOperator": "AND" },
-        {"predicate": "CLAUSE_NEST", "logicalOperator": "AND" },
+        {"predicate": "NESTING", "fields": { "type": "START" }, "logicalOperator": "AND" },
         { H },
         { F, "logicalOperator": "AND" },
-        {"predicate": "CLAUSE_UNNEST" }
+        {"predicate": "NESTING", "fields": { "type": "END" } }
     ]
 }
 \end{verbatim}
-+
-To support this construction, a model \verb|PICSUREWhereAttribute| is created, it contains an array of \verb|Constraint| and appropriately sets their \verb|logicalOperator| fields and adds the nesting \emph{where} clauses.
-\verb|CombinationConstraint| and \verb|GbConstraintComponent| are modified so that they disallow nested queries if the resource does not support it.
-This is reflected in the UI by removing the \verb|add criterion| boxes for the attributes with a level equal to or lower than 1.
-\verb|ConstraintService.generateConstraintFromConstraintObject()| is modified so that the (un)nesting \emph{where} clauses are generated when the resource supports it.
 
-% todo: what about the NOT???? made with exlucsion constraint, sep query and substraction: check it out 
+\verb|CombinationConstraint|, \verb|GbConstraintComponent| and \verb|ConstraintService.generateConstraintFromConstraintObject()| are modified to 
+\begin{itemize}
+    \item support this construction by storing an array of \verb|Constraint|, appropriately setting their \verb|logicalOperator| fields and adding the nesting \emph{where} clauses;
+    \item allowing or not the nesting of queries according to the resource capabilities.
+\end{itemize}
+Query nesting status is reflected in the UI by removing the \verb|add criterion| boxes for the attributes with a level equal to or lower than 1 if it is not supported.
 
-% ---
-
-
-\subparagraph{Generating \emph{where} Attribute}
+% generation of the whole thing from outside
 The method \verb|ConstraintService.generateSelectionConstraint()| is what is used by other parts of the code to generate the constraints defined in the first step in a format that fits the API call.
 We rename it to \verb|generateWhereAttribute()| to fit the PIC-SURE jargon, and modify the method accordingly.
-It returns a \verb|PICSUREWhereAttribute| as described in the previous paragraph.
+It returns a \verb|CombinationConstraint| as described in the previous paragraph.
 
+\subparagraph{Negation}
+The logical operator \verb|NOT| is at the same level as the \verb|AND| and \verb|OR|.
+For this reason the resources declare all the following operators:
+\begin{enumerate*}[label=(\arabic*)]
+  \item \verb|AND|,
+  \item \verb|OR|,
+  \item \verb|NOT|,
+  \item \verb|AND NOT|,
+  \item \verb|OR NOT|.
+\end{enumerate*}
+Which allows all kinds of queries.
+
+
+% ----------------------------------------------------------------------------------
 \paragraph{User Interface}
 When adding criterion at the step 1, the UI has to know what data type is the entity in order to know what input from the user is expected.
 This behavior is implemented in the \verb|GbConstraintComponent| and its extending components.
@@ -400,98 +512,64 @@ Additionally they use the information provided by \verb|IRCTResourceService| to:
 The parent \verb|GbConstraintComponent| is modified to hold the data type of the dropped node, and allow for the switch between predicates (if multiple predicates are supported by the data type).
 Then the extending components, one for each predicate (with the addition of the one for unknown predicates), are used according to the chosen predicate.
 
-% todo: apply trial visit constraint (field)
-% todo: apply observation date constraint
-% todo: import patient sets
 % todo: mention modifiers (but expose through tree)
 % todo: optimization : \verb|ConstraintService.optimizeContraintObject()|
-% todo: field: what field to query / dimension 
-% todo: list num. values possible operators
-% todo: relation/pedigree
 % todo: root constraint should it be mentionned? yes there will be no root, but an array, use the model for the and/or to hold it  
-% todo: rename models Constraint -> WhereClause
 % todo: create model SelectClause (for count example: fields pui, dataType, Function, dimension)
+% todo: rename constraint to whereclause
+% todo: pedigree relation types can be requested as a list, should it go also with api, or should it go in resource def?
+
 
 \subsubsection{Query Step 1: Aggregates}
+\label{sec:gb-step1-aggregates}
+%todo: model SelectClause
 
-Glowing Bear does two kinds of aggregate queries: counts and min/max.
-Count queries are made when the user presses \emph{Update Counts} after modifying constraints (in step 1) or after modifying selected attributes for export (in step 2).
+Glowing Bear does three kinds of aggregate queries: \emph{counts}, \emph{min} / \emph{max} and \emph{values}. 
+\emph{Counts} queries are made when the user presses \emph{Update Counts} after modifying constraints (in step 1) or after modifying selected attributes for export (in step 2).
+\emph{Min} / \emph{max} and \emph{values} queries are made when constructing constraints from the UI, to help the user the user by displaying some metadata.
 The API calls and calling methods made are modified to use PIC-SURE as described below.
-
-%todo: \paragraph{Counts}
-\verb|ResourceService.getCounts()| is merged into \verb|getAggregate()|, which itself gets added an argument \verb|aggregateType| specifying what types of aggregate are requested, optionally a \verb|dimension|, and path. %todo: revisit, need some kind of structure to construct aggregate query
 As support for aggregate \emph{select} calls is not mandatory for the resources, if the resource does not support it the related features are disabled (more info in section~\ref{sec:featuresdisable}).
 
-An API request for a count, min or max, with the \emph{where} constraint defined in step 1, would be:
+\verb|ResourceService.getCounts()|, \verb|getStudies()| are merged into \verb|getAggregate()|.
+This means that all the code calling those methods need to be adapted to fit the inputs and outputs of the new \verb|getAggregate()|.
+This notably includes \verb|GbConceptConstraintComponent.initializeConstraints()|, \verb|QueryService.updateInclusionCounts()|, \verb|updateExclusionCounts()|, \verb|updateCounts_2()|, \verb|updateConceptsAndStudiesForSubjectSet()|, \verb|ConstraintService.loadStudies()|.
+
+\verb|getAggregate()| becomes more generic and accepts the following arguments:
+\begin{itemize}
+    \item \verb|aggregateType|: \emph{count}, \emph{min}, \emph{max}, \emph{values}
+    \item \verb|dimension|: among the dimensions declared by the resource
+    \item \verb|pui|: optionally a concept path if it is relevant for the query
+    \item \verb|dataType|: data type of the \verb|pui|
+\end{itemize}
+
+% todo: mention the where clause in example
+Example of PIC-SURE aggregate \emph{select} clauses:
 \begin{verbatim}
 POST /rest/queryService/runQuery?full_response
 {
   "select": [ {
-    "field": {
-      "pui": "/path/to/concept/",
-      "dataType": "STRING"
-    },
+    "field": { "pui": "/path/to/concept/", "dataType": "STRING" },
     "operation": "AGGREGATE",
-    "fields": {
-        "FUNCTION": "count",
-        "DIMENSION": "patient"
-    }
+    "fields": { "FUNCTION": "count",  "DIMENSION": "patient" }
   }, {
     "operation": "AGGREGATE",
-    "fields": {
-        "FUNCTION": "count",
-        "DIMENSION": "observation"
-    }
+    "fields": { "FUNCTION": "count", "DIMENSION": "observation" }
   }, {
-  "field": {
-      "pui": "/path/to/concept/",
-      "dataType": "INTEGER"
-    },
+    "field": { "pui": "/path/to/concept/", "dataType": "INTEGER" },
     "operation": "AGGREGATE",
-    "fields": {
-        "FUNCTION": "min"
-    }
+    "fields": { "FUNCTION": "min" }
   }, {
-    "field": {
-      "pui": "/path/to/concept/",
-      "dataType": "INTEGER"
-    },
+    "field": { "pui": "/path/to/concept/", "dataType": "INTEGER" },
     "operation": "AGGREGATE",
-    "fields": {
-        "FUNCTION": "max"
-    }
-  } ],
+    "fields": { "FUNCTION": "max" }
+  }, {
+    "operation": "AGGREGATE",
+    "fields": { "FUNCTION": "values",  "DIMENSION": "study" }
+  }  ],
   "where": [ <constraints> ],
   "alias": "<query_alias>"
 }
 \end{verbatim}
-
-% todo reponse
-% Response:
-% \begin{verbatim}
-%     todo
-% \end{verbatim}
-
-Some modifications are made for code calling the API methods:
-\begin{itemize}
-    % getAggregate()
-    \item \verb|GbConceptConstraintComponent.initializeConstraints()| is modified to adapt to the new format of \verb|ResourceService.getAggregate()| to get the \emph{min} and \emph{max}, and to get rid of the call to get categorical, as they are now exposed through the tree as explained section~\ref{sec:todo}.
-
-    % getCounts()
-    \item \verb|QueryService.updateInclusionCounts()|, \verb|updateExclusionCounts()| and \verb|updateCounts_2()| are modified to now call \verb|ResourceService.getAggregate()| to get the counts.
-
-    % getCountsPerStudyAndConcept()
-    \item \verb|QueryService.updateConceptsAndStudiesForSubjectSet()| is modified to make use of \\
-    \verb|getAggregate()| to get the counts per concepts.
-\end{itemize}
-
-
-% TODO:
-%     \item \verb|ResourceService.getCountsPerStudyAndConcept()| (replaced by getCounts())
-%     \item \verb|ResourceService.getCountsPerStudy()|
-
-% Note that the use of \verb|getCountsPerStudyAndConcept()| and \verb|getCountsPerStudy()| is replaced by the more generic \verb|ResourceService.getCounts()|.
-% \verb|QueryService.updateConceptsAndStudiesForSubjectSet()| and \verb|updateConceptsAndStudies()| are removed reference to and use of studies.
 
 
 \subsubsection{Saving a Query}
@@ -576,62 +654,74 @@ Response:
 
 \subsubsection{Query Step 2: Data Selection}
 
+% overview
 In the PIC-SURE paradigm, this step is about preparing the \emph{select} statement of the query: the output for step 3 is the added \emph{select} causes to the query.
+The changes in this part are minimal, as they are mainly about the modification of the resulting JSON containing the concepts the user wishes to get as a result, but they represent the same information.
 
-\subparagraph{\emph{select} Models}
-A \verb|PICSURESelectAttribute| model is created to represent the \emph{select} clauses of PIC-SURE:
-it holds the paths/datatype, and then offer methods to set if we want the counts or the aggregate, etc.
+% modifications
+Originally this information is stored in a \verb|CombinationConstraint|, with individual constraints linked by a \verb|OR|.
+Here for this purpose we are creating a new \verb|PICSURESelectAttribute| model containing the different \emph{select} clauses, which for each clause holds the path of the concept and the associated data type.
+For the sake of consistency the method \verb|ConstraintService.generateProjectionConstraint()| is renamed to \verb|generateSelectAttribute()| and returns a \verb|PICSURESelectAttribute|.
+Some additional minor modifications are made in the methods using this, such as \verb|QueryService.updateCounts_2()|, \verb|updateExports()| and \verb|GbExportComponent.runExportJob()|.
 
-\paragraph{Generating \emph{select} Attribute}
-The method \verb|ConstraintService.generateProjectionConstraint()| is originally what is used by other parts of the code to generate the projection constraints in a format that fits the API call.
-We rename it to \verb|generateSelectAttribute()| to fit the PIC-SURE jargon, and modify the method accordingly.
-It returns a \verb|PICSURESelectAttribute| as described in the previous paragraph?).
-
-
-the modele pic sure select attr, has all the things selected from step 2, and after we set if we want count or what not 
-
-
-
-%Component orchestrating the step 2 is originally the \verb|GbProjectionComponent|
-QueryService.updateCounts_2
-ConstraintService.generateSelectionConstraint() : generate constraint with inclusion / exclusion: rename to generateConstraint
-% todo: criteria file import
-
+% example
+Example of \emph{select} clauses generated during the second step:
+\begin{verbatim}
+"select": [ {
+    "field": {
+        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Age/",
+        "dataType": "INTEGER"
+    }
+    }, {
+    "field": {
+        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Gender/Male/",
+        "dataType": "ENUM_VALUE"
+    }
+    }, {
+    "field": {
+        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Gender/Female/",
+        "dataType": "ENUM_VALUE"
+    }
+} ]
+\end{verbatim}
 
 
 \subsubsection{Query Step 3:  Data Export}
 
-todo: data types for export? what is it exactly ? -> data format api call 
 
 
-tabularresults
-check how data table couljkd be done (process? join?)
 
-%Component orchestrating the step 3 is originally the \verb|GbExportComponent|
+% todo: data types for export? what is it exactly ? -> data format api call 
 
 
-GET /resultService/available: returns the list of available results (of the user)
-returns the result id and the status
-<<< GB does first the call to get job list
+% tabularresults
+% check how data table couljkd be done (process? join?)
 
-GET /resultService/resultStatus/ID
-if problem: message field (always try to get it, but can be null)
-if OK, fields are: result id, status, startime, endtime, data type
-
-GET /resultService/availableFormats/ID
-returns list of formats for a specific result
-
-GET /resultService/result/ID/format?download=yes
-download can be put to no (content type will change, set yes for download from browser with clickable link)
+% %Component orchestrating the step 3 is originally the \verb|GbExportComponent|
 
 
-some formats may not be available, but could be implemented: do match and check with ward/ bo which to support
+% GET /resultService/available: returns the list of available results (of the user)
+% returns the result id and the status
+% <<< GB does first the call to get job list
 
---> match of the columns? possible to cancel in irct?NO, status returned ? YES
+% GET /resultService/resultStatus/ID
+% if problem: message field (always try to get it, but can be null)
+% if OK, fields are: result id, status, startime, endtime, data type
 
-GB original: 
-/file\_formats
-/data\_formats
+% GET /resultService/availableFormats/ID
+% returns list of formats for a specific result
+
+% GET /resultService/result/ID/format?download=yes
+% download can be put to no (content type will change, set yes for download from browser with clickable link)
+
+
+% some formats may not be available, but could be implemented: do match and check with ward/ bo which to support
+
+% --> match of the columns? possible to cancel in irct?NO, status returned ? YES
+
+% GB original: 
+% /file\_formats
+% /data\_formats
 
 
 \subsection{IRCT Resources Implementation}

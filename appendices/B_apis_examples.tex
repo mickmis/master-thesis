@@ -6,7 +6,7 @@ This appendix gives examples on how to use some APIs that are referred to in the
 
 % todo: make better and more
 % todo: contains REAL examples (i.e. real response)
-\subparagraph{List of studies}
+\paragraph{List of studies}
 The list of available studies is requested:
 \begin{verbatim}
 GET /v2/studies
@@ -32,7 +32,7 @@ Response:
 }
 \end{verbatim}
 
-\subparagraph{Query Terms Tree}
+\paragraph{Query Terms Tree}
 The tree of the queryable terms is recuperated, with a depth of 2:
 \begin{verbatim}
 GET /v2/tree_nodes?root=&depth=2&tags=true
@@ -70,7 +70,7 @@ Response:
 }
 \end{verbatim}
 
-\subparagraph{Saved Queries}
+\paragraph{Saved Queries}
 The list of previously saved queries is retrieved:
 \begin{verbatim}
 GET /v2/queries
@@ -114,7 +114,7 @@ Response:
 \end{verbatim}
 
 
-\subparagraph{Query}
+\paragraph{Query}
 
 \begin{verbatim}
 POST /v2/observations/counts_per_study_and_concept
@@ -218,7 +218,7 @@ constraint:{"type":"concept","conceptCode":"O1KP:AGE"}
 }
 
 
-starting here possible to change constraints & concepts in UI, then click on update counts:
+starting here possible to change constraints \& concepts in UI, then click on update counts:
 9. /counts\_per\_study\_and\_concept: update the counts according to the selected concepts-> return all relevant count (to update the tree) // constraint as param
 POST /v2/observations/counts\_per\_study\_and\_concept
 {
