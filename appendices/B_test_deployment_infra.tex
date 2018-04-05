@@ -35,7 +35,7 @@ docker exec -it <container_name> build-war.sh <deployment_name>
 When running with the default docker-compose configuration, the name of the container would be \verb|deployments_wildfly-server_1|.
 Below are described the different deployments that can be built.
 
-\paragraph{i2b2}
+\subsubsection{i2b2}
 Deployment name: \verb|i2b2|, URL exposed: \verb|/i2b2/|
 
 The i2b2 WAR is actually a deployment of Axis2. Within this deployment, all the i2b2 cells are deployed as AAR files (Axis2 Archive):
@@ -49,14 +49,14 @@ The i2b2 WAR is actually a deployment of Axis2. Within this deployment, all the 
     \item \verb|IM|: Identity Management
 \end{itemize}
 
-\paragraph{IRCT}
+\subsubsection{IRCT}
 Deployment name: \verb|irct|, URL exposed: \verb|/IRCT-CL/|
 
 Note that before you can build the IRCT deployment, i2b2 should have been built before (in order to deploy the JDBC drivers), and the database should up and initialized correctly.
 This is due to the fact that IRCT uses Hibernate to handle its data storage in the database, and when ran it will validate and update if necessary the database schema.
 To resolve an incompatibility of IRCT using Hibernate with the use of PostgreSQL, Hibernate is configured to add a prefix to all of the tables.
 
-\paragraph{tranSMART 17.1}
+\subsubsection{tranSMART 17.1}
 Deployment name: \verb|transmart-17.1|, URL exposed: \verb|/transmart-17.1/|
 
 % todo: a few lines
@@ -83,17 +83,17 @@ These scripts are copied in the \verb|/docker-entrypoint-initdb.d| folder.
 
 Below is an overview of the databases created.
 
-\paragraph{i2b2}
+\subsubsection{i2b2}
 Contains the i2b2 database schemas for all the cells and the default demo data.
 
-\paragraph{irct}
+\subsubsection{irct}
 Contains a snapshot of the IRCT database structure (that is updated as needed by Hibernate), and the resources information used by IRCT to connect to the resources:
 
 \begin{itemize}
     \item \verb|i2b2-local|: the local i2b2 instance
 \end{itemize}
 
-\paragraph{transmart\_17\_1}
+\subsubsection{transmart\_17\_1}
 Contains the structure and some default test data for tranSMART 17.1.
     
 \subsection{Lighttpd Web Server}

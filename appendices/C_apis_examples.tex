@@ -276,4 +276,18 @@ POST /v2/observations/counts\_per\_study\_and\_concept
 
 \section{PIC-SURE API}
 
+% GET /resultService/available: returns the list of available results (of the user)
+% returns the result id and the status
+% <<< GB does first the call to get job list
+
+% GET /resultService/resultStatus/ID
+% if problem: message field (always try to get it, but can be null)
+% if OK, fields are: result id, status, startime, endtime, data type
+
+% GET /resultService/availableFormats/ID
+% returns list of formats for a specific result
+
+% GET /resultService/result/ID/format?download=yes
+% download can be put to no (content type will change, set yes for download from browser with clickable link)
+
 \section{i2b2 API}

@@ -3,46 +3,46 @@
 
 \section{Background}
 % contains purely descriptive information
-This section offers some important background information providing context to what is presented in the later chapters. 
-First an overview of the different open-source clinical research systems is offered, 
-after which the different front ends allowing to exploit them are presented.
+% This section offers some important background information providing context to what is presented in the later chapters. 
+% First an overview of the different open-source clinical research systems is offered, 
+% after which the different front ends allowing to exploit them are presented.
 
 \subsection{Clinical Research Systems}
 
-talk about the inner data model of each
+% talk about the inner data model of each
 
 
-\subsubsection{tranSMART}
-%TODO
+% \subsubsection{tranSMART}
+% %TODO
 
-\subsubsection{i2b2}
-Informatics for Integrating Biology and the Bedside (i2b2) is a NIH-funded National Center for Biomedical Computing (NCBC) that is developing a software that goes by the same name. 
-%todo
+% \subsubsection{i2b2}
+% Informatics for Integrating Biology and the Bedside (i2b2) is a NIH-funded National Center for Biomedical Computing (NCBC) that is developing a software that goes by the same name. 
+% %todo
 
 
 
-%TODO
-% core server, demo data
-% db compat: 3
+% %TODO
+% % core server, demo data
+% % db compat: 3
 
-\subsubsection{SHRINE}
-%TODO
+% \subsubsection{SHRINE}
+% %TODO
 
 \subsubsection{PIC-SURE API / IRCT}
 
-% overview
-The National Institutes of Health (NIH) of the U.S. government launched in 2013 the first phase of the Big Data to Knowledge (BD2K)~\cite{BD2K} whose one of the goal is to exploit the immense amount of big data information to advance knowledge in modern biomedical research.
-One of those center of excellence is the PIC-SURE (Patient-centered Information Commons: Standardized Unification of Research Elements)~\cite{PIC-SURE} whose goal is create a scalable toolkit to enable patient-centered information commons.
-etc. created within HMS DBMI [cite], open source, 
-led by paul avillach One of their achievement is the BD2K PIC-SURE RESTful API [bd2k-picsure.hms.harvard.edu] that aims to incorporate multiple heterogeneous clinical research systems. 
-The official implementation of this API is called Inter Resource Communication Tool (IRCT).
+% % overview
+% The National Institutes of Health (NIH) of the U.S. government launched in 2013 the first phase of the Big Data to Knowledge (BD2K)~\cite{BD2K} whose one of the goal is to exploit the immense amount of big data information to advance knowledge in modern biomedical research.
+% One of those center of excellence is the PIC-SURE (Patient-centered Information Commons: Standardized Unification of Research Elements)~\cite{PIC-SURE} whose goal is create a scalable toolkit to enable patient-centered information commons.
+% etc. created within HMS DBMI [cite], open source, 
+% led by paul avillach One of their achievement is the BD2K PIC-SURE RESTful API [bd2k-picsure.hms.harvard.edu] that aims to incorporate multiple heterogeneous clinical research systems. 
+% The official implementation of this API is called Inter Resource Communication Tool (IRCT).
 
-% pic-sure api description
-While not actually being a clinical research system, the IRCT can be seen as a meta system that expose data of other systems through a common API.
-Restful api for heteregeonous datasets ,decentralized fashion, access with single comm. Layer -> interoperability layer (check the api doc pdf)
+% % pic-sure api description
+% While not actually being a clinical research system, the IRCT can be seen as a meta system that expose data of other systems through a common API.
+% Restful api for heteregeonous datasets ,decentralized fashion, access with single comm. Layer -> interoperability layer (check the api doc pdf)
 
 % IRCT components
-The IRCT implementation is the combination of four different components, that are open-source and available on~\cite{IRCT-github}. They are implemented in Java and use standard technologies: web application archive (WAR)~\cite{wiki:war} for deployment, Hibernate~\cite{wiki:hibernate} for data storage.
+The IRCT implementation of the PIC-SURE API is the combination of four different components, that are open-source and available on~\cite{IRCT-github}. They are implemented in Java and use standard technologies: web application archive (WAR)~\cite{wiki:war} for deployment, Hibernate~\cite{wiki:hibernate} for data storage.
 First the Communication Layer (IRCT-CL) implements the RESTful service that is exposed and documented by~\cite{PIC-SURE-API}. 
 The core component is the Application Programming Interface (IRCT-API), it handles the execution of queries and processing of results.
 An instance can be extended using the IRCT Extension (IRCT-EXT) that provides hooks and additional features without having to modify the core code.
@@ -53,13 +53,10 @@ Finally the Resource Interface (IRCT-RI) connects to the different resources thr
 %http://dbmi.hms.harvard.edu/news/datathon-hackathon-sep-14-15
 %info about hackaton: dana farber is looking for i2b2 frontend replacement 
 
-% notes on irct 
-%PREDICATE MANDATORY in query
-%DATA type is needed in query
 
-\paragraph{Technical Background}
+\paragraph*{PIC-SURE API Overview}
 PIC-SURE is resource based: each source of data (e.g. i2b2, tranSMART, etc.) is considered a resource.
-Each of these resource declare through their configuration the kind of clauses they support. 
+Each of these resources declare through their configuration the kind of clauses they support. 
 The configuration is done through the database.
 Four types of clauses are supported: \emph{select}, \emph{where}, \emph{process} and \emph{join}, but here we are mainly making use of \emph{select} and \emph{where}.
 
@@ -97,7 +94,7 @@ Example:
 \begin{verbatim}
 "where": [ {
     "field": {
-        "pui": ""/resource/study/Age/"",
+        "pui": "/resource/study/Age/",
         "dataType": "INTEGER"
     },
     "predicate": "CONSTRAIN_VALUE_NUMERIC",
@@ -112,21 +109,23 @@ Example:
 In order to construct queries made of the clauses previously described, the resources expose a tree of entities.
 Each of those entities, if they are queryable, declare a data type.
 Each of the predicates used for the \emph{where} clauses also declare one or more supported data types: this is the mechanism used to know which entities support which predicates.
+In order to link the tree nodes together, each resource declares what kind of relationships between nodes exist.
+For example if the tree supports the relationship \verb|CHILDREN|, a client can request all the children of a certain node. 
 
-\subsection{Cohort Exploration Front Ends}
-\subsubsection{Glowing Bear}
-%§ GB: Most recent Angular version is now ng5, AngularJS refers to the first generation of Angular which is sth. glowing bear no longer uses. see https://blog.angular.io/version-5-0-0-of-angular-now-available-37e414935ced
+% \subsection{Cohort Exploration Front Ends}
+% \subsubsection{Glowing Bear}
+% %§ GB: Most recent Angular version is now ng5, AngularJS refers to the first generation of Angular which is sth. glowing bear no longer uses. see https://blog.angular.io/version-5-0-0-of-angular-now-available-37e414935ced
 
-\subsubsection{tranSMARTApp}
-%are there other transmart clients that exist?
+% \subsubsection{tranSMARTApp}
+% %are there other transmart clients that exist?
 
 
-\subsubsection{i2b2 Clients}
-\paragraph{Webclient}
+% \subsubsection{i2b2 Clients}
+% \paragraph{Webclient}
 
-\paragraph{Workbench}
+% \paragraph{Workbench}
 
-\section{Related Work}
+% \section{Related Work}
 % say if open source or not 
 % this is more analytic than background: offering an overview of what else is done and compare it to what we are doing, reuse what was said in the background
 %CAVA: http://perer.org/papers/adamPerer-CAVA-IVS2014.pdf

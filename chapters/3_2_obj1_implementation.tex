@@ -1,39 +1,68 @@
+\newpage
 \section{Implementation of the Interoperability Layer}
-Here are described step-by-step the implementation of the solution presented in the last section. 
-Each of the step first explains what is the current status of the relevant components, and then what needs to be modified or implemented.
-% todo: nature of the thing-> should be test-driven
-% todo: give a roadmap
+Here is described component-per-component the implementation of the solution presented in the last section. 
+Each of the sections first explains what is the current status of the relevant components, and then what needs to be modified or implemented.
+First we describe the deployment of all the relevant components that need to be used in the system (refer to figure~\ref{fig:sysdiagramobj1}).
+Then we are going over all the modifications made to Glowing Bear, regarding the change of the API it uses.
+Finally we go over the modifications of the core of IRCT, and the implementation of all the resources it uses.
+
 
 \subsection{Deploying Original Components}
-First we are deploying an instance of IRCT, with an instance of i2b2 and tranSMART 16.2 which are both natively supported. 
+% todo: transmart 16.2?
+% todo: versions to be used
 
--> setup of the individual building blocks
+First of all we are compiling, setting up and deploying all the building blocks of the solution: Glowing Bear, IRCT, tranSMART 17.1, i2b2, SHRINE.
+The exhaustive information about the deployments using Docker can be found in appendix~\ref{sec:docker-images}.
+These components require some servers that are deployed with Docker: WildFly (application server), PostgreSQL (database server), lighttpd (web server)
 
-gb
-transmart 17.1
+% GB
+We are deploying Glowing Bear from the sources using the Angular command \verb|ng serve|, which is practical for development.
+For production deployment it is deployed through the web server.
+The version used is TBD.
+It is configured to use the locally deployed instance of back end components.
 
-data loaded
+% IRCT
+IRCT is compiled from sources and deployed using Docker.
+The version used is TBD.
+It is configured to use one local instance of each type of supported back end systems: i2b2, tranSMART 17.1, SHRINE.
+The configuration is done through the local PostgreSQL database.
 
-how is it done etc.
+% i2b2
+I2b2 is compiled from sources and deployed using Docker.
+The version used is TBD.
+The Spring configuration files and test data comes from the demo dataset that is provided with i2b2, and allows to have a demonstration running instance, done through the local PostgreSQL database.
 
-1. irct setup + i2b2 + transmart 16.2 + shrine
-deployment mainly, data? i2b2 demo data? fortransmart? 
-DB setup for the systems
-impl for shrine maybe? (extend the i2b2 one)
+% tranSMART 17.1
+tranSMART 17.1 is compiled from sources and deployed using Docker.
+The version used is TBD.
+The configuration is done through a grails configuration file, and some test data is loaded in the local PostgreSQL database used.
 
-details of in appendix~\ref{sec:docker-images}
-
+% SHRINE
+First step of the SHRINE deployment it to modify the existing i2b2 deployment.
+Its demo data (loaded in PostgreSQL) is duplicated three times, to replicate (with the appropriate configuration) three different instances of i2b2 (but served through the same web service).
+Then three instances of the SHRINE web services are deployed: this corresponds to a setting where the SHRINE network has three nodes.
+It is compiled from sources and deployed using Docker. 
+The version used is TBD.
+It is configured through simple configuration files.
+The SHRINE instances use a deployment of the MySQL database server for their data.
+The SHRINE webclient is served by the web server.
 
 \subsection{Glowing Bear Modifications}
+% todo: step 4 w/ data tables ?
+% todo: this overview might belong in design rather than here? evaluate
 
-% GB modif overview + why no transmart rest v2
+% GB modif overview
 Glowing Bear is pretty heavily modified, the idea being to make it a native PIC-SURE API client by replacing completely the tranSMART client API implementation. 
-Compatibility with tranSMART versions 17.1+ is later restored through the implementation of an IRCT resource interface (see~\ref{subsec:todo}).
-The reasoning behind this choice is that maintaining compatibility of two different but similar APIs in Glowing Bear would be possible, but complicated, which translates into additional efforts spent on the implementation, and later on the maintenance of the code: this would be sub-optimal as these efforts are better spent elsewhere.
-The potential downside of this choice is a time delay for the requests as we are introducing an additional middle-component, these will be formally measured in chapter~\ref{chap:perfeval}.
+In general the API requests are modified through the calls in \verb|ResourceService|, and the response through the models in \verb|src/app/models/|.
+On a very high-level, the important steps of the queries as mapped as such:
+\begin{itemize}
+    \item Step 1 (patients subselection with constraints): defining PIC-SURE \emph{where} clauses, making count queries queries with the \emph{select} clause
+    \item Step 2 (selection of data to export): defining \emph{select} clauses for data export, making count queries as well
+    \item Step 3 (data export): executing the export query previously built
+\end{itemize}
 
 % overview of steps taken in GB workflow: steps for modifications
-After reviewing what features will be removed from Glowing Bear, the organization of this section follows its typical workflow:
+The organization of this section follows Glowing Bear typical workflow:
 \begin{itemize}
     \item Client initialization: loading and login
     \item Explore the tree of concepts
@@ -43,56 +72,35 @@ After reviewing what features will be removed from Glowing Bear, the organizatio
     \item Step 3: Export the data
 \end{itemize}
 
-% todo: check, integrate or not
-% PIC SURE vocabulary: entity / concept
-% Here we will use the PIC-SURE vocabulary.
-% Implementation: change the names (concept -> entity)
-% Changes in Glowing Bear take root in the modification of the API calls, that are located in \verb|ResourceService|, this is thus what we take as starting points in this section. 
-% STEP 1: defining the where clauses (and a few count queries)
-% STEP 2: defining the SELECT clauses (what data do we want)
-%Request: modify in resource service
-%response: modify in models
-
-% todo: map step 1=where, step 2= select, step 3=export (data tables new step 3, where?) // 
-
-
-
-% --- text of previous version:
-%The study can however be considered as a dimension of the observations, something that can be supported generically through PIC-SURE.
-%Which means that this transition of studies to the more generic concept of dimension should also be applied in Glowing Bear, i.e. the behavior that is study specific should disappear.
-%We rename the module \verb|gb-study-constraint| to \verb|gb-dimension-constraint| to handle constraints based on dimension, if the resource exposes such entities in its tree.
-%In order to keep the name auto-completion feature, the list of possible values for the queried dimension is populated wiht the following query to PIC-SURE:
-% \begin{verbatim}
-% {
-%   "select": [ {
-%     "field": {
-%       "pui": "/<resource>/<path_to_dimension_entity>",
-%       "dataType": "DIMENSION"
-%     },
-%   "alias": "Creatinine%2C%20urine%20%28mg%20per%20dL%29"
-%   } ]
-% }
-% \end{verbatim}
+% why no transmart rest v2
+Compatibility with tranSMART versions 17.1+ is later restored through the implementation of an IRCT resource interface (see~\ref{sec:irct-res-transmart-17.1}).
+The reasoning behind this choice is that maintaining compatibility of two different but similar APIs in Glowing Bear would be possible, but complicated, which translates into additional efforts spent on the implementation, and later on the maintenance of the code: this would be sub-optimal as these efforts are better spent elsewhere.
+The potential downside of this choice is a time delay for the requests as we are introducing an additional middle-component, these are formally measured in a later chapter.%chapter~\ref{chap:perfeval}. % todo: ref
 
 
 \subsubsection{Authentication \& Authorization}
 % todo: possibly redo this part after feedback from ward
 
-The modification to Glowing Bear is the migration from the authorization protocol OAuth2~\cite{oauth2} to the authentication and authorization protocol OpenID Connect~\cite{openidconnect}.
-IRCT uses OpenID Connect to authenticate and authorize the users of its client applications, while Glowing Bear originally implements the client side of the OAuth2 protocol for authorization with tranSMART. 
-Since OpenID Connect is a layer on top of OAuth2, the modifications to migrate the client code from OAuth2 to OpenID Connect are not significant, and are made by making use of the \emph{angular-auth-oidc-client} library~\cite{angular-auth-oidc-client}.
-The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the OpenID Connect provider, which will then be embedded in the header of the HTTP requests to IRCT.
+% The modification to Glowing Bear is the migration from the authorization protocol OAuth2~\cite{oauth2} to the authentication and authorization protocol OpenID Connect~\cite{openidconnect}.
+% IRCT uses OpenID Connect to authenticate and authorize the users of its client applications, while Glowing Bear originally implements the client side of the OAuth2 protocol for authorization with tranSMART. 
+% Since OpenID Connect is a layer on top of OAuth2, the modifications to migrate the client code from OAuth2 to OpenID Connect are not significant, and are made by making use of the \emph{angular-auth-oidc-client} library~\cite{angular-auth-oidc-client}.
+% The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the OpenID Connect provider, which will then be embedded in the header of the HTTP requests to IRCT.
+
+TBD
 
 \subsubsection{IRCT Resources Support}
 % todo: summary of GB supports for predicates / operations
 
 \paragraph{Resources List}
-After the user has successfully logged in, Glowing Bear requests the list of IRCT resources available and their properties.
-Then the user chooses from the list which resource to use for the current session: it is possible to use only one resource at a time.
-The selected resource and its properties are kept in the new \verb|IRCTResourceService| service that keeps and processes all the information about the resource returned by PIC-SURE.
+After the user has successfully logged in, Glowing Bear requests the list of IRCT resources available and their definitions.
+Then the user chooses from the list which resource to use for the current session: it is possible to use only one resource at a time. % todo: behavior to be confirmed
+The selected resource and its definition are kept in the new \verb|IRCTResourceService| service that keeps and processes all the information about the resource returned by PIC-SURE.
+Among other things, this service is used to make the connection between tree data types and possible predicates that can be applied on them.
 The method \verb|ResourceService.getResources()| is added to retrieve the PIC-SURE resources with the following API call:
+
+\newpage
 \begin{verbatim}
-GET /rest/resourceService/resources
+GET /resourceService/resources
 \end{verbatim}
 
 Response:
@@ -138,22 +146,23 @@ Response:
 
 
 \paragraph{Specific Features}
+\label{sec:specific-features}
+
 \verb|IRCTResourceService| provides methods that determine if some specific features are supported, which allows some features of Glowing Bear to be enabled or disabled:
 \begin{itemize}
-    \item \verb|supportsCounts()|: returns \emph{true} if queries of type \verb|SELECT COUNT| are supported, which enables the live counts display in the UI
+    \item \verb|supportsCounts()|: returns \emph{true} if queries of type \verb|SELECT AGGREGATE COUNT| are supported, which enables the live counts display in the UI
     \item \verb|supportedCountsDimensions()|: if \verb|supportsCounts()| is \emph{true}, returns the countable dimensions (most commonly \emph{Patients} and \emph{Observations}).
-    \item \verb|supportsNestedClauses()|: returns \emph{true} if the \emph{where} clause predicates \verb|CLAUSE_NEST| and \verb|CLAUSE_UNNEST| allowing nesting are supported
-    \item \verb|| supports: min, max (others needed for GB?)
-    \item \verb|supportsStudies()|: returns \emph{true} if queries of type \verb|SELECT STUDIES| are supported (todo: also clinical trials) (todo: also constraint or not)
+    \item \verb|supportsNestedClauses()|: returns \emph{true} if the \emph{where} clause predicates \verb|CLAUSE_NEST| and \\
+    \verb|CLAUSE_UNNEST| allowing nesting are supported
+    \item \verb|supportsMinMax()| returns \emph{true} if queries of type \verb|SELECT AGGREGATE MIN/MAX| are supported
+    \item \verb|supportsStudies()| / \verb|supportsClinicalTrials()|: returns \emph{true} if queries based on those specific dimensions are supported 
     \item \verb|supportsPedigrees()|: returns \emph{true} if constraints based on pedigrees are supported
     \item \verb|supportsGetTreeWithDepth()|: returns \emph{true} if the tree can be retrieved with a specified depth (if the resource declare a tree relationship as \verb|CHILDREN-DEPTH-X|)
+    \item \verb|supportsDataExport()|: returns \emph{true} if data export queries are supported
 \end{itemize}
 
-% todo: add for the data types capabilities, what does it return exactly? predicate?
-% todo: add for shrine the only count (ie data export not supported)
 
-
-\subparagraph{Studies}
+\subparagraph{tranSMART Studies}
 
 % general + into tree
 The tranSMART REST API v2 has several calls that are specific to studies, while the PIC-SURE API does not have a direct equivalent to this.
@@ -163,22 +172,24 @@ However since the studies are completely embedded within the concept tree, i.e. 
 % list of studies
 If the resource supports it, \verb|ConstraintService.loadStudies()| loads the list of studies by calling \verb|ResourceService.getStudies()|, which is modified to use the following PIC-SURE call:
 \begin{verbatim}
-POST /rest/queryService/runQuery?full_response
+POST /queryService/runQuery
 {
   "select": [ {
-    "operation": "STUDIES"
+    "operation": "AGGREGATE",
+    "fields": {
+        "FUNCTION": "values",
+        "DIMENSION": "study"
+    }
   } ],
   "alias": "get_studies"
 }
 \end{verbatim}
 
-% todo: add pedigree (luke test to see how it works)
-
-
+%\subparagraph{Pedigree / Relation Type}
+% todo: GB asks transmart for the relation types, but for now we are putting them into permitted values of irct definition, change that ?
 
 \subsubsection{Concepts Tree}
 \label{sec:gb-tree}
-% todo: check consistency for level of details
 
 % modification of request (api call)
 The API call in \verb|ResourceService.getTreeNodes()| is modified according to the following:
@@ -189,7 +200,7 @@ The API call in \verb|ResourceService.getTreeNodes()| is modified according to t
 
 The API request becomes:
 \begin{verbatim}
-GET /rest/resourceService/path/<resource>/<path>/?relationship=<relationship>
+GET /resourceService/path/<resource>/<path>/?relationship=<relationship>
 \end{verbatim}
 
 Response:
@@ -218,7 +229,7 @@ Response:
 ]
 \end{verbatim}
 
-The \verb|dataType| field allows to know which constraints defined in the resource can be applied, thus what options can be presented to the user when a query is constructed with the help of the \verb|IRCTResourceService|, see more details section~\ref{sec:designgbstep1}.
+The \verb|dataType| field allows to know which constraints defined in the resource can be applied, thus what options can be presented to the user when a query is constructed with the help of the \verb|IRCTResourceService|.
 The \verb|visualattributes| field allows to modify the appearance of the concept in the UI, for example if it's a folder containing concept, or a leaf node. 
 Its presence is optional so if it is absent, the appearance will stay as it is by default, this behavior is defined in the \verb|GbTreeNodesComponent| component.
 The other fields can easily be mapped to original fields in Glowing Bear.
@@ -247,7 +258,8 @@ Overall the Glowing Bear workflow stays the same at a high-level, but its implem
 
 % logic
 \verb|ConstraintService| is initialized with \verb|IRCTResourceService|: this allows the service to link the data types of the tree nodes with the constraints they support. \\
-\verb|ConstraintService.generateConstraintFromConstraintObject()| is the core method of the constraint generation, and is thus completely re-implemented and is renamed \verb|generateConstraintFromDataType()|.
+\verb|ConstraintService.generateConstraintFromConstraintObject()| is the core method of the constraint generation, and is thus completely re-implemented and is renamed \\
+\verb|generateConstraintFromDataType()|.
 It is modified to take as input the data types coming from the PIC-SURE tree, and is using the \verb|IRCTResourceService| to get the constraints corresponding to the data types, returning a \verb|Constraint| object.
 \verb|generateConstraintFromSelectedNode()| is modified to have two cases only: it is a queryable node, i.e. it has a data type, or not. If it has a data type it uses \verb|generateConstraintFromDataType()| to get the constraint, if not it calls itself recursively with the children nodes.
 
@@ -313,13 +325,15 @@ Example of two different \emph{where} clauses that would be produced by the corr
 
 % ----------------------------------------------------------------------------------
 \paragraph{Instantiating Constraints}
+\label{sec:gb-instanciating-constraints}
+
 Because the predicates and the fields they have are known only at runtime, we create a service \verb|ConstraintFactoryService| that handles the instantiating of properly initialized \verb|Constraint| objects.
 A method \verb|createConstraint()| taking as parameters the data type and and predicate returns the \verb|Constraint| object.
-While some pre-defined predicates are supported by Glowing Bear (see list \ref{todo}), or even required for some features, not all can be supported. 
+While some pre-defined predicates are supported by Glowing Bear (see list below), or even required for some features, not all can be supported. 
 For this reason a generic \verb|Constraint| is created, that allows Glowing Bear to handle unknown constraints that resources might declare.
 
 % list of types of constraints, based on the predicate they support
-The difference constraint models with their associated predicate, that together support all the PIC-SURE data types listed in~\ref{sec:gb-predicates}, are listed below:
+The different constraint models with their associated predicate, that together support all the PIC-SURE data types listed before, are listed below:
 \begin{itemize}
     \item \verb|ConceptConstraint|: predicate \verb|CONSTRAINT_CONCEPT|, valid for \verb|ENUM_FIELD|, \verb|ENUM_VALUE|, \verb|CONCEPT| and all primitive types 
     \item \verb|FieldConstraint|: predicate \verb|CONSTRAINT_FIELD|, valid for arbitrary values of fields in dimensions (e.g. data types \verb|STUDY|, \verb|TRIAL_VISIT|), and used to create constraint based on observation date
@@ -329,7 +343,8 @@ The difference constraint models with their associated predicate, that together 
 
 Note that \verb|StudyConstraint| and \verb|TrialVisitConstraint| are merged within the new \verb|FieldConstraint|, similarly \verb|GbStudyConstraintComponent| into the new \verb|GbFieldConstraintComponent|.
 The trial-visit logic form \verb|GbConceptConstraintComponent| is moved to \verb|GbFieldConstraintComponent|.
-Note also that not all constraints are supported by all resources, the support is known by using \verb|IRCTResourceService.supports*()| methods. 
+Note also that not all constraints are supported by all resources, the support is known by using \\
+\verb|IRCTResourceService.supports*()| methods. 
 
 \subparagraph{Concept Constraint}
 This is a simple constraint based on the presence of a concept and possibly its associated value.
@@ -410,15 +425,18 @@ Example of a pedigree \emph{where} clause:
 \begin{verbatim}
 {
     "where": [
-        {"predicate": "CONSTRAINT_PEDIGREE", "fields": { "TYPE": "PARENTS_OF", "BIOLOGICAL":"YES" } },
+        {"predicate": "CONSTRAINT_PEDIGREE", "fields": { 
+          "TYPE": "PARENTS_OF", "BIOLOGICAL":"YES" 
+        } },
         <classic constraints>..., 
         {"predicate": "CONSTRAINT_PEDIGREE", "fields": { "TYPE": "CONSTRAINT_END" } }
     ]
 }
 \end{verbatim}
 
-Similarly to other constraints, the logic construction is implemented into \verb|GbPedigreeConstraintComponent| and the model representing such a constraint is \verb|PedigreeConstraint|.
-only enabled \verb|IRCTResourceService.supportsPedigree()|
+Similarly to other constraints, the logic construction is implemented into \\
+\verb|GbPedigreeConstraintComponent| and the model representing such a constraint is \verb|PedigreeConstraint|.
+It is only enabled if \verb|IRCTResourceService.supportsPedigree()| determines so.
 
 \subparagraph{Patient Set Constraint}
 Through the UI, the user of Glowing Bear can import a patient set and use it as a constraint, this handled by \verb|GbPatientSetConstraintComponent| and stored into a model \verb|PatientSetConstraint|, which are modified to adapt to the PIC-SURE format.
@@ -429,7 +447,9 @@ Example of patient set \emph{where} clauses:
 {
     "where": [
         {"predicate": "CONSTRAINT_PATIENT_SET", "fields": { "PATIENT_SET_ID": "52" } },
-        {"predicate": "CONSTRAINT_PATIENT_SET", "fields": { "PATIENT_IDS": "[2, 32, 96]" } }
+        {"predicate": "CONSTRAINT_PATIENT_SET", "fields": { 
+          "PATIENT_IDS": "[2, 32, 96]" 
+        } }
     ]
 }
 \end{verbatim}
@@ -437,6 +457,8 @@ Example of patient set \emph{where} clauses:
 
 % ----------------------------------------------------------------------------------
 \paragraph{Logical Operators}
+\label{sec:gb-logical-operators}
+
 Glowing Bear supports the definition of nested inclusion criteria, with the criteria belonging to the same group being linked by a logical operator \emph{AND} or \emph{OR}.
 PIC-SURE allows queries with several \emph{where} clauses and lets each resource declares the logical operators it supports to link them. 
 However the link between the clauses is flat, a clause defines its relationship with the previous clause: nested queries are not possible natively with PIC-SURE, but a workaround is presented below.
@@ -470,9 +492,11 @@ It would have the PIC-SURE query with the following \emph{where} clauses:
 }
 \end{verbatim}
 
-\verb|CombinationConstraint|, \verb|GbConstraintComponent| and \verb|ConstraintService.generateConstraintFromConstraintObject()| are modified to 
+\verb|CombinationConstraint|, \verb|GbConstraintComponent| and \\
+\verb|ConstraintService.generateConstraintFromConstraintObject()| are modified to...
 \begin{itemize}
-    \item support this construction by storing an array of \verb|Constraint|, appropriately setting their \verb|logicalOperator| fields and adding the nesting \emph{where} clauses;
+    \item support this construction by storing an array of \verb|Constraint|, appropriately setting their \\
+    \verb|logicalOperator| fields and adding the nesting \emph{where} clauses;
     \item allowing or not the nesting of queries according to the resource capabilities.
 \end{itemize}
 Query nesting status is reflected in the UI by removing the \verb|add criterion| boxes for the attributes with a level equal to or lower than 1 if it is not supported.
@@ -499,7 +523,7 @@ Which allows all kinds of queries.
 \paragraph{User Interface}
 When adding criterion at the step 1, the UI has to know what data type is the entity in order to know what input from the user is expected.
 This behavior is implemented in the \verb|GbConstraintComponent| and its extending components.
-These components are modified or removed to fit all the modifications previously described, to arrive at a state where there is one component for each of the supported predicates described section~\ref{todo}.
+These components are modified or removed to fit all the modifications previously described, to arrive at a state where there is one component for each of the supported predicates described section~\ref{sec:gb-instanciating-constraints}.
 Additionally they use the information provided by \verb|IRCTResourceService| to:
 \begin{itemize}
     \item offer to the user a list of the supported predicates to choose from,
@@ -513,12 +537,9 @@ The parent \verb|GbConstraintComponent| is modified to hold the data type of the
 Then the extending components, one for each predicate (with the addition of the one for unknown predicates), are used according to the chosen predicate.
 
 % todo: mention modifiers (but expose through tree)
-% todo: optimization : \verb|ConstraintService.optimizeContraintObject()|
-% todo: root constraint should it be mentionned? yes there will be no root, but an array, use the model for the and/or to hold it  
 % todo: create model SelectClause (for count example: fields pui, dataType, Function, dimension)
 % todo: rename constraint to whereclause
-% todo: pedigree relation types can be requested as a list, should it go also with api, or should it go in resource def?
-
+% todo: these last 2 things, check with the common models they are doing currently
 
 \subsubsection{Query Step 1: Aggregates}
 \label{sec:gb-step1-aggregates}
@@ -528,11 +549,12 @@ Glowing Bear does three kinds of aggregate queries: \emph{counts}, \emph{min} / 
 \emph{Counts} queries are made when the user presses \emph{Update Counts} after modifying constraints (in step 1) or after modifying selected attributes for export (in step 2).
 \emph{Min} / \emph{max} and \emph{values} queries are made when constructing constraints from the UI, to help the user the user by displaying some metadata.
 The API calls and calling methods made are modified to use PIC-SURE as described below.
-As support for aggregate \emph{select} calls is not mandatory for the resources, if the resource does not support it the related features are disabled (more info in section~\ref{sec:featuresdisable}).
+As support for aggregate \emph{select} calls is not mandatory for the resources, if the resource does not support it the related features are disabled (more info in section~\ref{sec:specific-features}).
 
 \verb|ResourceService.getCounts()|, \verb|getStudies()| are merged into \verb|getAggregate()|.
 This means that all the code calling those methods need to be adapted to fit the inputs and outputs of the new \verb|getAggregate()|.
-This notably includes \verb|GbConceptConstraintComponent.initializeConstraints()|, \verb|QueryService.updateInclusionCounts()|, \verb|updateExclusionCounts()|, \verb|updateCounts_2()|, \verb|updateConceptsAndStudiesForSubjectSet()|, \verb|ConstraintService.loadStudies()|.
+This notably includes \verb|GbConceptConstraintComponent.initializeConstraints()|, \verb|QueryService.updateInclusionCounts()|, \verb|updateExclusionCounts()|, \verb|updateCounts_2()|, \\
+\verb|updateConceptsAndStudiesForSubjectSet()|, \verb|ConstraintService.loadStudies()|.
 
 \verb|getAggregate()| becomes more generic and accepts the following arguments:
 \begin{itemize}
@@ -545,7 +567,7 @@ This notably includes \verb|GbConceptConstraintComponent.initializeConstraints()
 % todo: mention the where clause in example
 Example of PIC-SURE aggregate \emph{select} clauses:
 \begin{verbatim}
-POST /rest/queryService/runQuery?full_response
+POST /queryService/runQuery
 {
   "select": [ {
     "field": { "pui": "/path/to/concept/", "dataType": "STRING" },
@@ -580,7 +602,7 @@ See section~\ref{sec:irctsavedqueries} for the additional implementation in IRCT
 % saveQuery
 In \verb|ResourceService.saveQuery()| the API request becomes:
 \begin{verbatim}
-POST /rest/queryService/saveQuery
+POST /queryService/queries
 {
     "queryName": <query_name>,
     "query": {
@@ -599,7 +621,7 @@ Response:
 % getQueries
 In  \verb|ResourceService.getQueries()| the API request becomes:
 \begin{verbatim}
-GET /rest/queryService/queries
+GET /queryService/queries
 \end{verbatim}
 
 Response:
@@ -621,7 +643,7 @@ Response:
 % updateQuery
 In  \verb|ResourceService.updateQuery()| the API request becomes:
 \begin{verbatim}
-PUT /rest/queryService/queries/<query_id>
+PUT /queryService/queries/<query_id>
 {
     "queryName": <query_name>,
     "query": {
@@ -640,7 +662,7 @@ Response:
 % deleteQuery
 In  \verb|ResourceService.deleteQuery()| the API request becomes:
 \begin{verbatim}
-DELETE /rest/queryService/queries/<query_id>
+DELETE /queryService/queries/<query_id>
 \end{verbatim}
 
 Response:
@@ -688,138 +710,321 @@ Example of \emph{select} clauses generated during the second step:
 
 \subsubsection{Query Step 3:  Data Export}
 
+% intro / problem with pic-sure / overview of what is needed
+Using data export with only the native \emph{select} and \emph{where} clauses of the PIC-SURE API reveals a bit limiting as IRCT originally supports only tabular results, i.e. a classic row-columns result.
+Moreover there is no support for custom export parameters such as different types of data, only format of the result can be chosen between \emph{TABULAR} or \emph{JSON}.
+On the other end, backends such as tranSMART supports elaborated parameters for getting results, which is a required features for our system.
+For these reasons we are not using the native export mechanism of PIC-SURE in order to select the format of the data, but are defining a custom \emph{process} clause named \verb|EXPORT|, if the resource supports it.
+Modifications in Glowing Bear to use PIC-SURE can be summarized in three points:
+\begin{itemize}
+    \item Get available data types and file formats for a specific query (export parameters);
+    \item Submit export request;
+    \item List exports and download them.
+\end{itemize}
+
+\paragraph{Available Export Parameters}
+
+% API calls
+\verb|ResourceService.getExportFileFormats()| requests to the back end the supported file formats for the exports.
+\verb|getExportDataFormats()| requests to the back end the supported types of data to export, given the current query.
+These two requests are merged into \verb|getExportFormats()| and the API calls are replaced by using a PIC-SURE query with specific \emph{select} clauses using the operation \verb|EXPORT|, example:
+\begin{verbatim}
+POST /queryService/runQuery
+{
+  "select": [ {
+    "operation": "EXPORT",
+    "fields": { "SUPPORTED_FORMATS": "[data, file]" }
+  }, 
+    <query_select_clauses>
+  ],
+  "where": [ <query_where_clauses> ],
+  "alias": "<query_alias>"
+} 
+\end{verbatim}
+
+% in service
+\verb|QueryService.updateExports()| is modified to take into account the merging of these two methods and the result that is now represented differently.
+
+\paragraph{Export Request}
+
+% API calls
+\verb|ResourceService.createExportJob()| and \verb|runExportJob()| that respectively create an run an export job are merged into \verb|runExportJob()|.
+The call made is similar the previous, using \emph{select} clauses to specify the parameters of the export job:
+\begin{verbatim}
+POST /queryService/runQuery
+{
+  "select": [ {
+    "operation": "EXPORT",
+    "fields": { "data": "clinical", "file": "TSV" }
+  }, {
+    "operation": "EXPORT",
+    "fields": { "data": "mrna", "file": "JSON" }
+  }, 
+    <query_select_clauses>
+  ],
+  "where": [ <query_where_clauses> ],
+  "alias": "<query_alias>"
+} 
+\end{verbatim}
+
+Note that the name of the fields match the possible values of the \verb|SUPPORTED_FORMATS| field.
+
+% in component
+\verb|GbExportComponent.runExportJob()| is modified to take into account the merging of these two methods and the result that is now represented differently.
 
 
+\paragraph{Manage Exports}
 
-% todo: data types for export? what is it exactly ? -> data format api call 
+% list
+\verb|GbExportComponent.updateExportJobs()| takes care of refreshing the list of exports previously made by using \verb|ResourceService.getExportJobs()| to make the API request.
+This API request is modified to:
+\begin{verbatim}
+GET /resultService/available
+\end{verbatim}
 
+% download
+\verb|GbExportComponent.downloadExportJob()| take care handling the download of the file containing the exported results, and to do so it uses the API request made in \verb|ResourceService.downloadExportJob()|.
+This call is modified to:
+\begin{verbatim}
+GET /resultService/result/<result_id>/ZIP?download=yes
+\end{verbatim}
 
-% tabularresults
-% check how data table couljkd be done (process? join?)
+Note that before that a first call is made to get the available formats for the results, but in the case of multi-dimensional data it will always return \verb|ZIP|:
+\begin{verbatim}
+GET /resultService/availableFormats/<result_id>
+\end{verbatim}
 
-% %Component orchestrating the step 3 is originally the \verb|GbExportComponent|
-
-
-% GET /resultService/available: returns the list of available results (of the user)
-% returns the result id and the status
-% <<< GB does first the call to get job list
-
-% GET /resultService/resultStatus/ID
-% if problem: message field (always try to get it, but can be null)
-% if OK, fields are: result id, status, startime, endtime, data type
-
-% GET /resultService/availableFormats/ID
-% returns list of formats for a specific result
-
-% GET /resultService/result/ID/format?download=yes
-% download can be put to no (content type will change, set yes for download from browser with clickable link)
-
-
-% some formats may not be available, but could be implemented: do match and check with ward/ bo which to support
-
-% --> match of the columns? possible to cancel in irct?NO, status returned ? YES
-
-% GB original: 
-% /file\_formats
-% /data\_formats
+% todo: cancel / archive not covered
+% todo: data table, using param in select EXPORT? process?
 
 
-\subsection{IRCT Resources Implementation}
-some to be modified, some to be implemented
+\subsection{IRCT-Related Implementation}
 
-- add support for shrine/medco with additional JAR packaged and put in wildfly
-- add systems (by type) with pq-psql functions
+\subsubsection{IRCT Core Modifications}
+% todo: version from github to select: which? there seem to be a new query param (commit on feb 2) only\_count, which may prove valuable for GB << important question to solve, check out a specific commit? last release is not recent enough as of now 
+% todo: auth mechanism? TBD
 
-resources modficiatons: add the agreggates (i2b2 just count, avg/min/max seems to be complicated? check it out)
-i2b2: no select (currently), because it is mainly about the constraints: where clauses
+\paragraph{Saving Queries: Additional API Calls}
+\label{sec:irctsavedqueries}
 
-importatn to specify what is done with minimal set of things supported
+% rest api
+The original IRCT does implement an API call to save a specific query: \verb|POST /queryService/savequery|.
+However it does not provide a way to manage the existing queries.
+As this is a required feature, we are adding it in the IRCT core.
+We modify the class \verb|edu.harvard.hms.dbmi.bd2k.irct.cl.rest.QueryService| to add the following methods:
+\begin{itemize}
+    \item \verb|getQueries()|, implementing API call \verb|GET /queryService/queries|
+    \item \verb|saveQuery()|, implementing API call \verb|POST /queryService/queries|
+    \item \verb|deleteQuery()|, implementing API call \verb|DELETE /queryService/queries/<query_id>|
+    \item \verb|updateQuery()|, implementing API call \verb|PUT /queryService/queries/<query_id>|
+\end{itemize}
 
---> include datatype in query: saves a req to tree node
+The mapping API calls to methods is done using JAX-RS~\cite{wiki:jaxrs}.
+
+% controller
+The class \verb|irct.controller.QueryController| that implements the logic of managing queries.
+It needs to be modified so that the saved queries are associated to an user: the users should be able to manage only their own queries.
+
+\paragraph{Data Export: Support of Additional Data Type}
+
+% why + add type
+The original IRCT supports results of following types: \verb|TABULAR|, \verb|JSON|, \verb|HTML|, \verb|IMAGE|.
+Supports for types of results is represented through the enum \verb|edu.harvard.hms.dbmi.bd2k.irct.model.result.ResultDataType| and the the code that manipulates it.
+The data exports in tranSMART and i2b2 gives multi-dimensional data that are not supported with this construction.
+To support such results, we add an IRCT result type \verb|ZIP|.
+The resources using this type declare it through their \verb|irct.model.resource.implementation.| \\
+\verb|QueryResourceImplementationInterface.getQueryDataType()| method.
+
+% things to modify as consequence for added type
+In the newly created package \verb|irct.model.result.zip| we create a new class that implement the \verb|ZIP| result type, to do do it implements the classes
+\verb|irct.model.result.Data| and \\
+\verb|irct.model.result.Persistable|.
+This is a pretty simple implementation that only stores the resulting files from resources on the file system.
+
+
+\subsubsection{IRCT Resources Implementation}
+
+% overview
+The IRCT resources needs to define two things:
+\begin{itemize}
+    \item declaration of its parameters and the kind of requests it supports, through SQL statements loaded in the database (we are using PostgreSQL);
+    \item a Java class implementing some interfaces in a way that match the declaration of the resource capabilities.
+\end{itemize}
+
+Some of these things are already existent, but needs modifications, and some others need to be implemented from scratch.
+The details of this is explained in the following paragraphs.
+
+% java interfaces
+The interfaces that are to be implemented by the resources are the following:
+\begin{itemize}
+    \item \verb|ResourceImplementationInterface|: generic resource, provides methods for setup and type of resource
+    \item \verb|PathResourceImplementationInterface|: methods for traversing tree exposed by the resource
+    \item \verb|QueryResourceImplementationInterface|: methods for running queries
+    % \item \verb|ProcessResourceImplementationInterface|: methods for running processes
+\end{itemize}
+
 \paragraph{i2b2}
+The i2b2 resource implementation exists in the original IRCT, along with a library that allows to communicate with i2b2.
+However this implementation is not exactly adapted for our goal and needs modifications.
 
-\paragraph{SHRINE}
+We make the i2b2 resource declare the following \emph{select} operations:
+\begin{itemize}
+    \item \verb|AGGREGATE|, fields:
+    \begin{itemize}
+        \item \verb|FUNCTION|, mandatory, possible values:
+        \verb|COUNT|
+        
+        \item \verb|DIMENSION|, optional, possible values:
+        \verb|observation|,
+        \verb|patient|
+    \end{itemize}
+    
+    \item \verb|EXPORT|, fields:
+    \begin{itemize}
+        \item \verb|SUPPORTED_FORMATS|: possible values: \verb|file| %, \verb|data|
+        \item \verb|file|: value among the ones returns with \verb|SUPPORTED_FORMAT|
+    \end{itemize}
+    
+    \item (without predicate): select data to export
+\end{itemize}
 
-\paragraph{tranSMART 16.2}
+And the following \emph{where} predicates:
+\begin{itemize}
+    \item \verb|CONSTRAIN_CONCEPT|, constraint based on a concept, field:
+    \verb|OPERATOR|, optional, possible values:
+    \begin{itemize}
+        \item numeric values: \verb|==|, \verb|<=|, \verb|>=|, \verb|<|, \verb|>|
+        \item string values: \verb|LIKE[exact]|, \verb|LIKE[begin]|, \verb|LIKE[end]|, \verb|LIKE[contains]|
+    \end{itemize}
+    
+    \item \verb|CONSTRAINT_PATIENT_SET|, constraint based on a patient set, fields:
+    \begin{itemize}
+        \item \verb|PATIENT_SET_ID|: identifier of a patient set stored in the back end
+        \item \verb|PATIENT_IDS|: array of patient identifiers
+    \end{itemize}
+\end{itemize}
+
+% tree
+Browsing the i2b2 tree of concepts if already implemented and does not need modification, except from the visual attributes parameters that is adapted to fit with a common standard.
+
+% queries: select / where
+The modifications are mainly targeted at fitting the exposed \emph{where} predicates and \emph{select} operations.
+However there is a larger modification, which is to adapt the parsing of the \emph{AND} / \emph{OR} queries as described section~\ref{sec:gb-logical-operators} as they need to be re-organized in the resource implementation to fit the native i2b2 way of querying, which has a non flexible syntax:
+\begin{verbatim}
+    (A OR B OR ...) AND (X OR Y OR ...) AND ...
+\end{verbatim}
+Note that the i2b2 resource does not support query nesting.
+
+% i2b2 parse and or:
+% Y OR Z OR (A AND B)
+% (Y OR Z OR A) AND (Y OR Z OR B)
 
 \paragraph{tranSMART 17.1}
-last step is transmart 17.1 as connector, because it is if time allows
+\label{sec:irct-res-transmart-17.1}
+
+We make the tranSMART 17.1 resource declare the following \emph{select} operations:
+\begin{itemize}
+    \item \verb|AGGREGATE|, fields:
+    \begin{itemize}
+        \item \verb|FUNCTION|, mandatory, possible values:
+        \verb|COUNT|,
+        \verb|MIN|,
+        \verb|MAX|,
+        \verb|VALUES|
+        
+        \item \verb|DIMENSION|, optional, possible values:
+        \verb|observation|,
+        \verb|patient|,
+        \verb|study|,
+        \verb|trial_visit|
+    \end{itemize}
+    
+    \item \verb|EXPORT|, fields:
+    \begin{itemize}
+        \item \verb|SUPPORTED_FORMATS|: possible values: \verb|file|, \verb|data|
+        \item \verb|file|: value among the ones returns with \verb|SUPPORTED_FORMAT|
+    \end{itemize}
+    
+    \item (without predicate): select data to export
+\end{itemize}
+
+And the following \emph{where} predicates:
+\begin{itemize}
+    \item \verb|CONSTRAIN_CONCEPT|, constraint based on a concept, field:
+    \verb|OPERATOR|, optional, possible values:
+    \begin{itemize}
+        \item numeric values: \verb|==|, \verb|<=|, \verb|>=|, \verb|<|, \verb|>|
+        \item string values: \verb|LIKE[exact]|, \verb|LIKE[begin]|, \verb|LIKE[end]|, \verb|LIKE[contains]|
+    \end{itemize}
+
+    \item \verb|CONSTRAIN_FIELD|, constraint based on a field in one of the dimension, fields:
+    \begin{itemize}
+        \item \verb|DIMENSION|
+        \item \verb|FIELD|
+        \item \verb|OPERATOR|
+        \item \verb|VALUE|
+    \end{itemize}
+    
+    \item \verb|CONSTRAIN_PEDIGREE|, constraint based on relationship between patients, fields:
+    \begin{itemize}
+        \item \verb|TYPE|, e.g. \verb|PARENTS_OF|, etc. among permitted values
+        \item \verb|BIOLOGICAL|, possible values: \verb|YES|, \verb|NO|, \verb|BOTH|
+        \item \verb|CONSTRAINT_END|
+    \end{itemize}
+    
+    \item \verb|CONSTRAINT_PATIENT_SET|, constraint based on a patient set, fields:
+    \begin{itemize}
+        \item \verb|PATIENT_SET_ID|: identifier of a patient set stored in the back end
+        \item \verb|PATIENT_IDS|: array of patient identifiers
+    \end{itemize}
+    
+    \item \verb|NESTING|, fields: \verb|TYPE| (values: \verb|start| or \verb|end|)
+    
+\end{itemize}
+
+% lib
+First in order to support all the calls to tranSMART 17.1 backends that are needed, a simple client library for tranSMART REST API v2 is developed.
+In terms of features, this library offers all calls that were previously available in Glowing Bear, and that will be used to answer the calls from the PIC-SURE API.
+
+% tree
+The tree exposed through the PIC-SURE API is the same as the tranSMART 17.1.
+Natively PIC-SURE does not support browsing the tree at more than one level at a time, so we add another relationship supported in browsing the tree: \verb|CHILDREN-DEPTH-X|, that will return children with a depth up to \verb|X|.
+The visual attributes parameters is added in order to display with the proper type in the UI the node, an example of this is the study: it is a \verb|STUDY| node in the tree, and in order to be displayed as such in the UI the visual attributes parameters is set as such.
+
+% queries: select / where
+All the predicates and operations described before are translated into the native API in a straightforward way, as all the information for input is available.
+The is a special case: if the queried concept belongs to a study, a study constraint is added, while if the concept is cross-study it is left as is.
+The nesting of queries described section~\ref{sec:gb-logical-operators} is implemented in the resource and translated in the native API.
+
+\paragraph{SHRINE}
+The SHRINE API is basically a limited i2b2 API (saves for some very minor additional fields).
+It supports only counts, which means no data exports.
+The only significant difference is in the results, as one query brings several results.
+We take the i2b2 implementation and slightly modify to the purpose of being compatible with SHRINE nodes.
+
+The resource exposes the following \emph{select} operations:
+\begin{itemize}
+    \item \verb|AGGREGATE|, fields:
+    \begin{itemize}
+        \item \verb|FUNCTION|, mandatory, possible values:
+        \verb|COUNT|
+        
+        \item \verb|DIMENSION|, optional, possible values:
+        \verb|observation|,
+        \verb|patient|
+    \end{itemize}
+\end{itemize}
+
+And the following \emph{where} predicates:
+\begin{itemize}
+    \item \verb|CONSTRAIN_CONCEPT|, constraint based on a concept, field:
+    \verb|OPERATOR|, optional, possible values:
+    \begin{itemize}
+        \item numeric values: \verb|==|, \verb|<=|, \verb|>=|, \verb|<|, \verb|>|
+        \item string values: \verb|LIKE[exact]|, \verb|LIKE[begin]|, \verb|LIKE[end]|, \verb|LIKE[contains]|
+    \end{itemize}
+\end{itemize}
+
+%todo: \paragraph{tranSMART 16.2} it is not tranSMART 16.2 :( but i2b2 transmart
 
 
-%\subsection{Current Status of Softwares}
-%\subsection{Glowing Bear}
-%desc of how it works
-resource info in db -> example on how to do it with i2b2
-through the api resourceService/resources get us all the resources and their capabilities(by type, but we want query for now i guess?)
-define:
-- predicates
-- relationships
-- the entities also define relationships, what is it exactly?
--> for GB we would need a minimum set of capabilities??
-
--> study should become just a parameter of the tree entity, but we shouldnt care about it
--> how / at which stage implement that in Gb?
-
-edu.harvard.hms.dbmi.bd2k.irct.cl.rest;
-classes implementing the REST API, using javax.ws.rs / JAX-RS: Java API for RESTful Web Services
-
----
-
--- irct --
-version from github to select: which? there seem to be a new query param (commit on feb 2) only\_count, which may prove valuable for GB << important question to solve, check out a specific commit? last release is not recent enough as of now 
-
---> in the queryesrvice, when running query, there is a parameter "only\_count" that exists (in the later version)
-it is added to the metadata of the query, to be processed by the RI (i guess support not mandatory) 
--> to have less processing, use it from GB!
-
-select aggregate (count), they exist, check out: https://github.com/hms-dbmi/IRCT/blob/ae31f79ef2015bc6ae349e30e2a6652a22141b07/IRCT-RI/src/main/resources/SciDB.sql
-
-aggregate is a type of select, and count is a type of aggregate, totally OK to do that 
-
-
-
---Resources--
-does a lib in java to talk to transmart rest v2 exists? would be nice
-
-todo: i2b2 parsing of and/or check notes
-
-todo: transmart cache the ontology because depth can be specified
-
-implekmentaion of transmart: study as first layer? no just the tree presentede by transmart
-
-define interface for java / sql skeleton for GlowingBearFeatureName (counts, etc.)
-
-
-RI transmart: thourhg the path, if within study: study is queried, if cross-study: no study queried, basically do as the constraint is specifying
-+ to find the study associated to a concept, simply go up, or keep in cache a list of studies
-Moreover the tree concept of tranSMART has at its root the studies
-expose in tree as DIMENSION or as STUDY? --> dimension (like this lcinical trial also supported)
-
-todo transmart: clauses nest / unnest
-todo transmart: study data type
-todo transmart: studies list, select operation
-
-% todo: in irct modifs: add query name to the saved queries / add getQueries that returns the whole queries / add getQuery/id with PUT, DELETE, methods
-
-
-% todo: config of irct: in appendix? 
-
-irct tree impl.: transmart include study
-i2b2 include modifiers
-
-
-from transmart api: OK to use concept path
- "type": "concept",
-                "path": "\\Public Studies\\EHR\\Diagnosis\\",
-
-
----
-i2b2 parse and or:
-Y OR Z OR (A AND B)
-(Y OR Z OR A) AND (Y OR Z OR B)
-
---> 1 lvl only nesting
-todo: how to enforce genericly this structure in the UI? what is possible to do in UI?
-
----
-enum / study / modifier :TREE
