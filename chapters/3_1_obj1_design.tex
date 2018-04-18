@@ -1,6 +1,9 @@
 % todo: information if someone wants to make a resource compatible with GB: what kind of things it should expose
 % todo: diagram include third-party for auth
 % todo: uniform vocab (concepts / entities) (backend / back end)
+% todo: depth with a parameter?
+% todo: backgorund about oidc (client id, etc.)
+% todo: oauth2/oidc/jwt/jwk cite as rfc
 
 \chapter{Interoperability Layer for Clinical Research Systems}
 
@@ -28,7 +31,6 @@ Figure~\ref{fig:sysdiagramobj1} shows the system diagram after completion of the
 We can see that IRCT acts as a back end component for Glowing Bear, all its communications go through it using the PIC-SURE API.
 IRCT communicates with the native APIs of the back end systems.
 
-% todo: transmart 16.2?
 \begin{figure}[ht]
     \centering
     \includegraphics[width=1\textwidth]{figures/sys_diagram_obj1.png}
@@ -48,11 +50,38 @@ During those last operations, the counts corresponding to the query are updated 
 Finally once the full query is constructed, the user executes the final query and is able to download the results, again using one common API.
 
 
-\subsection{Authentication \& Authorization}
-TBD: the authentication \& authorization design still needs to be decided
+\subsection{Access Management}
 
-%The authentication and authorization is delegated to a third-party using the OpenID Connect protocol~\cite{openidconnect}.
+The authentication is delegated to a third-party using the OpenID Connect protocol~\cite{todo}, here the third-party we use is Keycloak but it could be swapped with any software implementing the same protocol.
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/access_mgmt.png}
+    \caption{Diagram of the access management design.}
+    \label{fig:accessmgmt}
+\end{figure}
+
+Figure~\ref{fig:accessmgmt} shows the high-level picture of the access management in our solution, which revolves around Keycloak.
+All components, i.e. IRCT and the back ends, verify the JSON Web Token embedded in the requests to authenticate the user and enforce its authorizations. %todo: cite JWT
+
+% steps
+The steps are:
+\begin{enumerate}
+    \item The client performs the authentication with Keycloak, with the client ID of the back end (which is set up to be the same as the IRCT resource name), and get a JSON Web Token containing the user authorizations
+    \item Glowing Bear makes HTTP requests to IRCT, with the JWT embedded in the headers.
+    \item IRCT verify the JWT using the public key of Keycloak. 
+    The JWT contains the identifier of the signing key, which IRCT uses to requests the corresponding public key to Keycloak (and is cached to minimize the requests) and then verify the signature.
+    \item The authenticated request is forwarded to the back end the user is using, the token remains the same.
+    \item The back end verify the JWT using the same method as IRCT, and is responsible to enforce its own authorizations, which are contained in the JWT.
+\end{enumerate}
+
+% about client ids
+Note that the JWT are verified twice in this design. 
+The JWT contains the client identifier, which must be verified by the OIDC clients.
+IRCT do not have its own client identifier, but verify that the identifier matches the one of the back end.
+The back end has its own client identifier, and for the sake of consistency we enforce that the IRCT resource name is the same as the client identifier.
+
+% todo: add small ccl on why this is good, and some analysis
 
 \subsection{Glowing Bear Queries}
 

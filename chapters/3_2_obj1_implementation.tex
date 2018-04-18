@@ -1,4 +1,7 @@
 \newpage
+% todo: explanation about data table
+% todo: explanations+ modifs about transmart 16.2
+% todo: integration in common interface
 \section{Implementation of the Interoperability Layer}
 Here is described component-per-component the implementation of the solution presented in the last section. 
 Each of the sections first explains what is the current status of the relevant components, and then what needs to be modified or implemented.
@@ -18,8 +21,14 @@ These components require some servers that are deployed with Docker: WildFly (ap
 % GB
 We are deploying Glowing Bear from the sources using the Angular command \verb|ng serve|, which is practical for development.
 For production deployment it is deployed through the web server.
-The version used is TBD.
+The version used is branched off the development branch \verb|table|, which is the most up to date branch at the time of the writing, and is regularly rebased on this same branch.
 It is configured to use the locally deployed instance of back end components.
+
+% todo: put in annex for docker deployment, also db
+Keycloak is deployed as an OpenID Connect server using its official Docker image that sets up a working instance.
+It uses the same PostgreSQL database that other deployments are using.
+The version used is 3.4.3.
+It is configured with a local user data source managed by itself, and one client for each back end that will use this instance.
 
 % IRCT
 IRCT is compiled from sources and deployed using Docker.
@@ -61,14 +70,16 @@ On a very high-level, the important steps of the queries as mapped as such:
     \item Step 3 (data export): executing the export query previously built
 \end{itemize}
 
+% todo: save query is after step 2
+
 % overview of steps taken in GB workflow: steps for modifications
 The organization of this section follows Glowing Bear typical workflow:
 \begin{itemize}
     \item Client initialization: loading and login
     \item Explore the tree of concepts
     \item Step 1: Construct a query or re-use a saved query
-    \item Save a constructed query
     \item Step 2: Select the data to export
+    \item Save a constructed query
     \item Step 3: Export the data
 \end{itemize}
 
@@ -79,14 +90,13 @@ The potential downside of this choice is a time delay for the requests as we are
 
 
 \subsubsection{Authentication \& Authorization}
-% todo: possibly redo this part after feedback from ward
 
-% The modification to Glowing Bear is the migration from the authorization protocol OAuth2~\cite{oauth2} to the authentication and authorization protocol OpenID Connect~\cite{openidconnect}.
-% IRCT uses OpenID Connect to authenticate and authorize the users of its client applications, while Glowing Bear originally implements the client side of the OAuth2 protocol for authorization with tranSMART. 
-% Since OpenID Connect is a layer on top of OAuth2, the modifications to migrate the client code from OAuth2 to OpenID Connect are not significant, and are made by making use of the \emph{angular-auth-oidc-client} library~\cite{angular-auth-oidc-client}.
-% The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the OpenID Connect provider, which will then be embedded in the header of the HTTP requests to IRCT.
-
-TBD
+IRCT uses OpenID Connect to authenticate and authorize the users of its client applications, while Glowing Bear originally implements the client side of the OAuth2 protocol for authorization with tranSMART. 
+The modification to Glowing Bear is the migration from the authorization protocol OAuth2~\cite{oauth2} to the authentication and authorization protocol OpenID Connect~\cite{openidconnect}.
+Since OpenID Connect is a layer on top of OAuth2, the modifications to migrate the client code from OAuth2 to OpenID Connect are not significant, and are made by making use of the \emph{angular-auth-oidc-client} library~\cite{angular-auth-oidc-client}.
+The flow remains the same: Glowing Bear obtains a JSON Web Token (JWT) from the OpenID Connect provider, which will then be embedded in the header of the HTTP requests to IRCT.
+These modifications are made by replacing the \verb|EndPointService| by \verb|AuthenticationService|, which implements the logic of the authentication.
+Additionally a small component \verb|AutoLoginComponent| redirects to the login page of the OIDC server if the authentication token is not valid or not present.
 
 \subsubsection{IRCT Resources Support}
 % todo: summary of GB supports for predicates / operations
@@ -594,6 +604,40 @@ POST /queryService/runQuery
 \end{verbatim}
 
 
+\subsubsection{Query Step 2: Data Selection}
+
+% overview
+In the PIC-SURE paradigm, this step is about preparing the \emph{select} statement of the query: the output for step 3 is the added \emph{select} causes to the query.
+The changes in this part are minimal, as they are mainly about the modification of the resulting JSON containing the concepts the user wishes to get as a result, but they represent the same information.
+
+% modifications
+Originally this information is stored in a \verb|CombinationConstraint|, with individual constraints linked by a \verb|OR|.
+Here for this purpose we are creating a new \verb|PICSURESelectAttribute| model containing the different \emph{select} clauses, which for each clause holds the path of the concept and the associated data type.
+For the sake of consistency the method \verb|ConstraintService.generateProjectionConstraint()| is renamed to \verb|generateSelectAttribute()| and returns a \verb|PICSURESelectAttribute|.
+Some additional minor modifications are made in the methods using this, such as \verb|QueryService.updateCounts_2()|, \verb|updateExports()| and \verb|GbExportComponent.runExportJob()|.
+
+% example
+Example of \emph{select} clauses generated during the second step:
+\begin{verbatim}
+"select": [ {
+    "field": {
+        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Age/",
+        "dataType": "INTEGER"
+    }
+    }, {
+    "field": {
+        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Gender/Male/",
+        "dataType": "ENUM_VALUE"
+    }
+    }, {
+    "field": {
+        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Gender/Female/",
+        "dataType": "ENUM_VALUE"
+    }
+} ]
+\end{verbatim}
+
+
 \subsubsection{Saving a Query}
 On top of modifying the \verb|Query| model to fit the PIC-SURE format, only the API calls to handle query saving need to be modified, the calling code remains the same.
 The IRCT implementation to save and re-use saved queries is not complete: it is originally possible to only save queries, but not list or load them. 
@@ -673,40 +717,6 @@ Response:
 \end{verbatim}
 
 % todo: restoreQuery()
-
-\subsubsection{Query Step 2: Data Selection}
-
-% overview
-In the PIC-SURE paradigm, this step is about preparing the \emph{select} statement of the query: the output for step 3 is the added \emph{select} causes to the query.
-The changes in this part are minimal, as they are mainly about the modification of the resulting JSON containing the concepts the user wishes to get as a result, but they represent the same information.
-
-% modifications
-Originally this information is stored in a \verb|CombinationConstraint|, with individual constraints linked by a \verb|OR|.
-Here for this purpose we are creating a new \verb|PICSURESelectAttribute| model containing the different \emph{select} clauses, which for each clause holds the path of the concept and the associated data type.
-For the sake of consistency the method \verb|ConstraintService.generateProjectionConstraint()| is renamed to \verb|generateSelectAttribute()| and returns a \verb|PICSURESelectAttribute|.
-Some additional minor modifications are made in the methods using this, such as \verb|QueryService.updateCounts_2()|, \verb|updateExports()| and \verb|GbExportComponent.runExportJob()|.
-
-% example
-Example of \emph{select} clauses generated during the second step:
-\begin{verbatim}
-"select": [ {
-    "field": {
-        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Age/",
-        "dataType": "INTEGER"
-    }
-    }, {
-    "field": {
-        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Gender/Male/",
-        "dataType": "ENUM_VALUE"
-    }
-    }, {
-    "field": {
-        "pui": "/<resource>/Public Studies/CATEGORICAL_VALUES/Demography/Gender/Female/",
-        "dataType": "ENUM_VALUE"
-    }
-} ]
-\end{verbatim}
-
 
 \subsubsection{Query Step 3:  Data Export}
 
@@ -840,6 +850,10 @@ In the newly created package \verb|irct.model.result.zip| we create a new class 
 \verb|irct.model.result.Data| and \\
 \verb|irct.model.result.Persistable|.
 This is a pretty simple implementation that only stores the resulting files from resources on the file system.
+
+\paragraph{Authentication Modifications}
+TBD: modifications to support the authentication design
+% todo
 
 
 \subsubsection{IRCT Resources Implementation}
@@ -1027,4 +1041,11 @@ And the following \emph{where} predicates:
 
 %todo: \paragraph{tranSMART 16.2} it is not tranSMART 16.2 :( but i2b2 transmart
 
+\subsection{Back Ends Modifications}
+\subsubsection{i2b2 \& derivatives}
+% todo: class to be implemented i saw about: https://github.com/i2b2/i2b2-core-server/tree/master/edu.harvard.i2b2.pm/src/edu/harvard/i2b2/pm/util
+TBD: modify PM to support OIDC (will support medco and shrine as well)
 
+\subsubsection{tranSMART 17.1}
+% todo
+TBD: using spring security, get OIDC compatibility

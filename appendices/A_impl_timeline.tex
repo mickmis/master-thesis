@@ -13,15 +13,16 @@
 
 The timeline aims to have first a working system with Glowing Bear, IRCT and i2b2 by taking an horizontal approach, i.e. have each feature working end-to-end individually.
 Then the different resources are made to be working with the system.
-Total of the implementation of objective 1 is 10 weeks: 9 weeks are detailed in the breakdown, and an additional week as margin of error.
+Total of the implementation of objective 1 is 10 weeks, that are detailed in the breakdown.
 
 \begin{itemize}
-    \item System initialization (login, resource list, etc.): \emph{1w}
+    \item System initialization (login, resource list, etc.): \emph{2w}
     \begin{itemize}
-        \item Setup: i2b2 + IRCT deployment
+        \item Setup: i2b2 + IRCT + keycloak deployment
         \item IRCT resource: i2b2 resource declaration
         \item Glowing Bear: \verb|IRCTResourceService|, configuration
-        \item IRCT: ??  TBD: Authentication % TODO
+        \item IRCT: small modification for OIDC support
+        \item i2b2: OIDC support modification of PM cell
     \end{itemize}
     
     \item Concepts Tree: \emph{1w}
@@ -62,6 +63,7 @@ Total of the implementation of objective 1 is 10 weeks: 9 weeks are detailed in 
     \item IRCT resource: tranSMART 17.1: \emph{2w}
     \begin{itemize}
         \item Setup: tranSMART 17.1 deployment
+        \item Modification for OIDC support
         \item Concepts tree browsing
         \item Constraints and Aggregates
         \item Variables selection
