@@ -1,0 +1,483 @@
+% options and things considered, and why we chose this
+% full overall design + choice of it is here
+% flow:
+% requirements from problem statements (and intro in general)
+% design choices overall
+% which one is retained and why
+% full design
+
+\chapter{High-Level System Design}
+
+% start here with the requirements?
+\label{sec:sysdesign}
+%--> here not the descriptive part (should go to related work / background), but the analytic part
+% only open source tech considered
+% somewhere: why not just implementing i2b2 in GB
+
+% In the open-source spirit, existing technologies and standard. Maximizing the value of the work. 
+% Integrating with existing systems.
+% In order to meet the requirements listed section~\ref{sec:requirements}, 
+
+
+\section{Solution Requirements}
+\label{sec:requirements}
+% this is the more technical part
+
+\begin{itemize}
+    \item compatibility with the major open-source clinical research systems -> transmart 17.1, i2b2
+    \item use of apis standard to easily integrate with others
+    \item unique front end to exploit several back ends: main open-source ones
+    \item support all the features of GB-> not a requirement, consequence of choosing GB//however a list of the UI features we want to have should be present // i.e. not downgrading experience for existing users
+    \item practical runtime / negligible overhead
+    \item open-source
+\end{itemize}
+
+
+%todo: define first and second objectives (referenced after)
+% todo: if existing solutions are used: those are used by actual users and should not lose features, no change is desired from user p-o-v
+% seemingless integration with existing systems
+
+%TODO: define auth* schemes, user mgmt, and all: requirements? yes but to be extended later 
+
+
+\section{Choice of Open-Source Technologies}
+\begin{itemize}
+    \item to fulfill requirements: choose the basic building blocks of the system
+\end{itemize}
+
+% Technologies for this are naturally split in two categories, client (front end) and server (back end) sides.
+% In this section we compare and choose the basic building blocks of our solution and how they fit together from a high-level point-of-view.
+
+\subsection{Back End Systems: Clinical Research Platforms}
+% As stated section~\ref{sec:requirements}, we target compatibility with the main open-source clinical research platforms. 
+% In that area the two main players are \emph{i2b2} and \emph{tranSMART}.
+% Less widespread, and building on \emph{i2b2}, also exists \emph{SHRINE} and \emph{MedCo}.
+
+% § about i2b2: why support it
+
+% § about tranSMART: why support it 
+
+% § about MedCo: why support it: keep for obj. 2: \subsubsection{Privacy-Preserving Platform}
+
+
+% what exist there, which one we are targetting the compatibility for and why // descriptive part in related work / background
+% + mention pic sure here or in separate subsec?
+
+% transmart-rest-api plugin: what is it? no api natively ?
+
+% checkout/mention more general systems: scidb / elasticsearch / olap-mdx (mdx is the query language, olap the model)-could be envisioned to be supported thorgh pic sure --> go to future work
+
+\begin{itemize}
+    \item why using IRCT and not i2b2 directly from GB
+    \item why not technologies from related work
+\end{itemize}
+
+
+\subsection{Front End System: Cohort Explorers}
+% cohort exploration: § what's available (compatible with previously selected systems)
+\begin{itemize}
+    \item borderline by etriks (?)
+    \item GB
+    \item i2b2 webclient: outdated technologies
+    \item i2b2 workbench: heavy client, not portable enough
+    \item transmartApp 
+    \item from sratch
+\end{itemize}
+
+% § Why GB 
+% already compatible with 17.1
+
+% § what does gb need to work (what is it using from the transmart rest api?)
+
+% summary
+%--> should conclude with what front end we want to use : GB
+%need for not changing current user experience for clients
+
+
+\section{System Design Scenarios}
+
+\begin{itemize}
+    \item we have the building blocks: how to assemble them
+\end{itemize}
+
+% Now that we chose the fundamental open-source building blocks of our solution, we must fit them together.
+% We have two natural approaches to do so: with or without a middle component.
+
+% there are two main approaches we can use to assemble them together.
+
+
+% Assembling these tools together can take several roads, present them here.
+% weigh the procs and cons
+% 2 main models: with or wihtout a backend component
+% w/ backend component: can use IRCT as the backend
+% Alternative models? (OLAP/MDX investigations? To be discussed)
+% The final decision
+
+% --> should conclude that we want the scenario 2, i.e. with a backend
+
+% then paragraph to introduce the use of pic sure, which is an optional implementation option, but needs investigations -> next section
+
+% backend scenario> either implement or use sth existing
+
+% 2 transversal questions to answer: 
+% - impl. in front or back end
+% - using pic-sure or not 
+
+\subsection{Localization of the Interoperability Layer}
+
+\begin{itemize}
+    \item front-end or back-end
+\end{itemize}
+
+
+\subsection{Using the PIC-SURE API}
+
+% % % goal of investigations
+% % Given the choice of the scenario that makes use of a backend, the option of using the IRCT as the backend for the system is to be evaluated.
+% % On a first look it looks good 
+
+% % % technical analysis
+% % questions raised --> cf next §
+
+% % % questions raised and answered
+% % This first technical analysis raised some questions on IRCT, becasue we want the , we woul
+% % Because using IRCT introduce a heavy dependency towards it for Glowing Bear, 
+
+
+% % how it allows us to cover the requirements
+
+
+% % Decision on implementation scenario \& technologies
+% % Description of 2 scenarios
+% % PIC-SURE API Investigations
+% % I2b2, SHRINE and tranSMART 16.2 current status of integration
+% % Estimation of effort to integrate tranSMART 17.1
+
+
+% % PIC-SURE API Investigations
+% % § what is being investigated, link to things explained before (why this is being investigated as potential solution)
+
+% % Actions of irct on external defined by set of definitions (list: predicates supported, things executed on resources), resources declare what they support
+% % Interface (RI) execute the action with the resource interface in the native protocol, result is returned as irct result
+
+% % Architecture: 4 layers (the components): put diagram
+% % Authentication done by irct (with external auth provider it seems?) - irct has set of credentials to talk to the resources 
+% % It uses JWT for authentication -> not sure how this works
+% % Jwt token is signed using the secret configured // https://auth0.com/docs/tokens/access-token
+% % Openid connect // for tests:https://openidconnect.net/
+% % ---
+% % , using maven/java
+% % War deployed in wildfly or similar
+% % Hibernate for auto-gen of db (postgresql seems to work, event if a ext thing is compatible only with oracle: hmlsssynonyms)
+% % Sql files are provided to fill db (not tested yet)
+% % Configuration: should be guessed (wildfly can’t deploy without it)
+% % %Redirect_on_success: url to redirect after login
+% % %Client_secret: shared secret with auth provider
+% % %Userfield: user id field name in resp. From auth provider
+% % %Client_id: client id when talking to auth provider?
+% % %Domain: domain of auth provider?
+% % %Keyoutinmuntes: time out of key (120 mins default)
+
+
+% % analysis shoold be targeted: what is its goal? evaluate it meets the requirements of GB
+% % § analysis/description of the API: todo %http://bd2k-picsure.hms.harvard.edu/docs/IRCT_Protocol_1.0.pdf !!!!! (actually took the 1.1)
+% % Notes:
+
+% % Layer -> interoperability layer (check the api doc pdf)
+% % introduce resource term
+
+% % infos in wiki + github
+
+% % § questions that came up (list): from analyse of what’s available online, interrogations came up, include also the answers (check out list of questions that was made)
+
+% % § set up of the thing: compiling from sources etc. packaged with docker (links to that)
+
+% % § tests on the set up: what resources to take for tests? Must have is I2b2 and is supposed to work out the box (need shrine deployment then??) -- shrine not supported officially, but i2b2 
+% % If it works w/ i2b2 -> good, it will work with shrine-medco, and transmart 17.1 as native GB support in worst-case scenario (nice to have: transmart 17.1 adapter w/ irct)
+
+% % (conclusions on the investigations in subsections)
+
+
+% % About the existing UI tools: 
+
+% % --> should conclude here that we want to use pic sure
+
+% ----------
+% \paragraph{tranSMART 17.1 Integration}
+% In order to consider using the PIC-SURE API, we need to ensure that 
+% §analyses of yes or not: Imoprtant: does GB matches with ability of the pic sure api? I.e. does the transmart api v2 can be replaced by pic sure 
+% Or not? Since irct supports i2b2/old transmart it should support transmart api v2
+
+% Irct works with resources: you ask the api about resource and what it can do, and you can query it with a unique api
+% Hard to say with the only doc for api there is, it s a bit brief (but should be fine because of i2b2-transmart support)
+% --> optional, best to have (also easier for GB developments)
+
+% §estimation of the effort needed
+% open
+
+
+\subsubsection{tranSMART Support}
+\begin{itemize}
+    \item in GB or through PIC-SURE, since pic-sure chosen at that point
+\end{itemize}
+
+
+
+\section{System Design}
+
+\subsection{Technical Choices Summary}
+% --> conclusion to resume the technical choices made
+
+\subsection{System Overview}
+\begin{itemize}
+    \item graph overview
+\end{itemize}
+\subsubsection{Workflow}
+\begin{itemize}
+    \item high-level and summarized workflow of the system
+\end{itemize}
+
+
+
+% \paragraph{Front End}
+% \emph{Glowing Bear}, with a dedicated back end serving as an interoperability layer: \emph{IRCT}.
+
+% \paragraph{Supported Clinical Research Platforms}
+% The relevance of these systems in our case lie in their API and how they are used. 
+% To that extent, an exhaustive list of systems and API combinations we choose to support is the following:
+% \begin{itemize}
+%     \item tranSMART REST API v1 (versions >= 1.24 \& <= 16.2)~\cite{tranSMART-REST-API},
+%     \item tranSMART REST API v2 (versions >= 17.1)~\cite{tranSMART-REST-API},
+%     \item i2b2~\cite{i2b2-docs};
+%     \item SHRINE~\cite{todo}
+%     \item MedCo~\cite{todo}
+% \end{itemize}
+
+% Altogether these systems serve an enormous of data, and being able to access them from a unique front end would prove much beneficial to researchers.
+
+% todo: GB -> heavy refactor -> explain and motivate
+
+% todo: argue on why not implementing i2b2 directly in GB (maintainalitity, future proof, etc.)
+
+% ------------------
+% todo: email exchange pic sure devs
+% Stedman, Jason Paul to me, Ward, Bo, Paul
+% Show more
+% Mar 2
+% That document is more of a forward looking architectural overview. There are features explained in the document that were never implemented.
+
+% It is not up to date, but some of the information is still valid.
+
+
+
+% From: Mickaël Misbach <mickael@thehyve.nl>
+% Date: Friday, March 2, 2018 at 3:20 PM
+% To: Jason <jason_stedman@hms.harvard.edu>
+% Cc: Ward Weistra <ward@thehyve.nl>, Bo Gao <bo@thehyve.nl>, "Avillach, Paul" <Paul_Avillach@hms.harvard.edu>
+% …
+
+% Subject: Re: PIC-SURE API questions
+
+% I installed it and played a bit with it, indeed easy and works great.
+
+% Another question, is this API documentation up to date?
+% https://github.com/hms-dbmi/bd2k-picsure.hms.harvard.edu/blob/master/www/docs/IRCT%20Protocol%201.1.pdf
+
+% Thanks again for your help.
+% Best regards,
+% Mickaël Misbach
+
+
+% On Fri, Mar 2, 2018 at 6:53 PM Stedman, Jason Paul <Jason_Stedman@hms.harvard.edu> wrote:
+% Mickaël,
+
+% Please have a look at this quick-start Docker setup:
+
+% https://github.com/hms-dbmi/docker-images/tree/master/deployments/irct/quick-start
+
+% It configures the i2b2.org demo instance as a PIC-SURE resource.
+
+% Thanks,
+
+% Jason
+
+% From: Mickaël Misbach <mickael@thehyve.nl>
+% Sent: Friday, March 2, 2018 10:24:02 AM
+
+% To: Stedman, Jason Paul
+% Cc: Ward Weistra; Bo Gao; Avillach, Paul
+% Subject: Re: PIC-SURE API questions
+% Thanks a lot for all those information, this is very helpful.
+
+% Best regards,
+% Mickaël Misbach
+
+% On Fri, Mar 2, 2018 at 3:16 PM Stedman, Jason Paul <Jason_Stedman@hms.harvard.edu> wrote:
+% 2.0 is being developed to undo some fundamental design limitations in PIC-SURE API, but with straight forward migration in mind and as much backwards compatibility as reasonable given the things that are changing.
+
+% As part of 2.0 we are building a 1.4 Resource Interface so pre-existing 1.4 installations will become 2.0 resources that can still be queried with slight reformatting to become PIC-SURE 2.0 compliant.
+
+% That being said, the resource service's path and find endpoints will be changing pretty drastically specifically to address concerns that UI developers have expressed, so this will help you more than it hurts.
+
+% That's all the detail I am comfortable sharing at the moment. In short, ease of migration is one of our top priorities.
+
+% --Jason
+
+% From: Mickaël Misbach <mickael@thehyve.nl>
+% Sent: Friday, March 2, 2018 8:58:23 AM
+% To: Stedman, Jason Paul
+% Cc: Ward Weistra; Bo Gao; Avillach, Paul
+
+% Subject: Re: PIC-SURE API questions
+% Dear Jason,
+
+% Thank you for your email, this is great news.
+% Could you tell me if this version 2.0 will change significantly the API?
+
+% Looking forward to try out those Dockers.
+% Best regards,
+% Mickaël Misbach
+
+% On Fri, Mar 2, 2018 at 2:33 PM Stedman, Jason Paul <Jason_Stedman@hms.harvard.edu> wrote:
+% Mickaël,
+
+% Jeremy is no longer working on the project.
+
+% Additionally, the repositories you are looking at are no longer under active development. Please instead refer to our merged repository for v1.4 of PIC-SURE API:
+
+% https://github.com/hms-dbmi/IRCT
+
+% There is a version 2.0 coming out soon which will be in a separate repository named for the project and which will be under the Apache 2 license.
+
+% We also have a Docker stack being released today that makes getting up and running a 5 minute process.
+
+% Thanks,
+
+% Jason
+
+
+
+% From: Mickaël Misbach <mickael@thehyve.nl>
+% Sent: Friday, March 2, 2018 7:35:02 AM
+% To: Ward Weistra; Easton-Marks, Jeremy R
+% Cc: Stedman, Jason Paul; Bo Gao
+% Subject: Re: PIC-SURE API questions
+ 
+% Hello all,
+
+% I am taking the liberty of including Jeremy Easton-Marks in the conversation as according to the Github statistics he seems to be the main developer of IRCT.
+
+% I am currently trying to set up an instance of IRCT for testing, and I have made it up to compiling and setting up the DB structure. Still missing loading up the DB and the configuration.
+
+% We would very much appreciate any help!
+% Thank you in advance.
+% Best regards,
+% Mickaël Misbach
+
+% On Fri, Mar 2, 2018 at 11:59 AM Ward Weistra <ward@thehyve.nl> wrote:
+% Hi Jason,
+
+% Our intern Mickaël Misbach, who has previously worked with Jean-Louis Raisaro at EFPL on MedCo, is evaluating the PIC-SURE API for building a user on. The PIC-SURE documentation links to your group for further information. Would you be able to help him answer the attached questions? Maybe you can refer us to a developer contact or mailing list?
+
+% Thanks in advance for your help!
+
+% Best regards,
+% Wars
+% -- 
+% Ward Weistra | Team Lead Data Warehousing
+% Out of office on Friday
+
+
+% ------------------
+% todo: email exchange pic sure users
+% me to Adem, Melanie, Ward
+% Show more
+% Apr 4
+% Hi Adem,
+
+% I understand completely, thank you for your answer, and please yes come back to us if you happen to go in the open-source direction!
+
+% Best regards,
+% Mickaël Misbach
+% …
+
+% On Tue, Apr 3, 2018 at 11:28 PM Albayrak, Adem <Adem_Albayrak@dfci.harvard.edu> wrote:
+% Hi Mickael, Ward,
+ 
+% That’s still dependent on how closely we end up being coupled to the wider initiative. It’s tough to commit to a timeline when the direction we’re going to head in (open source vs internal) is still not fully defined. Very sorry we don’t have more we can add at this point in time, but if we do go in that direction we should definitely talk more and figure out how we might be able to learn from/help each other.
+ 
+% Best,
+% Adem
+ 
+% From: Mickaël Misbach <mickael@thehyve.nl>
+% Date: Tuesday, April 3, 2018 at 5:09 AM
+% To: Melanie Davies <Melanie_Davies@DFCI.HARVARD.EDU>
+% Cc: Ward Weistra <ward@thehyve.nl>, "Albayrak, Adem" <Adem_Albayrak@DFCI.HARVARD.EDU>
+
+% Subject: Re: PIC-SURE user perspective
+% Hi Melanie,
+ 
+% Thank you for your feedback!
+% Will your code be made public once more mature? And if yes do you have a rough idea of the timeline?
+ 
+% Thank you.
+% Best regards,
+% Mickaël Misbach
+ 
+% On Thu, Mar 29, 2018 at 10:35 PM Davies, Melanie <Melanie_Davies@dfci.harvard.edu> wrote:
+% Hi Ward and Mickael,
+
+% We’re using the PIC-SURE API to connect our UI to our i2b2 resources. We’ve had success with populating our hierarchies in the UI via the API and running simple queries and are working with HMS towards being able to support all of the i2b2 functionality, including composing complex queries (multiple ANDs and ORs) and supporting i2b2’s conception of projects. In the short term, this will be enabled through a passthrough that will allow us to use PIC-SURE where we can, and to pass through i2b2 XML for functionality that PIC-SURE does not yet support. Our code isn’t publically available and is still in the early stages of development. We haven’t extended out or documented any of the API.
+ 
+% Best,
+% Melanie
+ 
+% From: Ward Weistra <ward@thehyve.nl>
+% Date: Tuesday, March 27, 2018 at 10:19 AM
+% To: "Albayrak, Adem" <Adem_Albayrak@DFCI.HARVARD.EDU>, "Davies, Melanie" <Melanie_Davies@DFCI.HARVARD.EDU>
+% Cc: Mickaël Misbach <mickael@thehyve.nl>
+% Subject: Re: PIC-SURE user perspective
+ 
+% Hi Melanie and Adem,
+ 
+% Could you please see if someone in your team has a chance to look at Mickaels questions below?
+% It would also work great to have a short call, to save you the time of preparing and writing.
+ 
+% Thanks in advance for your help!
+ 
+% Best regards,
+% Ward
+
+% On Tue, Mar 13, 2018 at 11:57 AM Mickaël Misbach <mickael@thehyve.nl> wrote:
+% Dear Adem,
+ 
+% As Ward mentioned we are considering the use of the PIC-SURE API in Glowing Bear, and some feedback from your perspective would be very helpful.
+ 
+% Here is a list of questions I have:
+% Your usage of the API
+% What is (are) your use-case(s) of using the PIC-SURE API?
+% What is your setup? i.e. resources connected, clients using the API
+% Instance publicly available?
+% Development
+% Did you develop something using the API? 
+% If yes what is it and is the code available / open-source?
+% Do you have any documentation on the API?
+% Did you extend it? Using the “IRCT-EXT” or implementing / modifying resource interfaces
+% If yes what is your experience?
+% Your general opinion on the API?
+% Any other relevant information, resource or feedback (like unexpected problems, shortcomings, etc.)
+% Any answer, even partial, would prove useful to us!
+% Thanks a lot in advance for your time.
+% Best regards,
+% Mickaël Misbach
+% On Tue, Mar 13, 2018 at 10:25 AM Ward Weistra <ward@thehyve.nl> wrote:
+% Dear Adem,
+ 
+% I hope you are doing well!
+% As I believe we have discussed before, I currently have a student exploring whether we can use the PIC-SURE API to extend support of the Glowing Bear cohort selector to applications like i2b2, Shrine and MedCo. His name is Mickael Misbach (on cc) from the EFPL.
+% He has already been in extensive contact with the HMS team, but it would really help him to get the user's experience of the API for evaluation. Would you or Sandeep be able to answer a few of his questions and share DF's experience with building on it?
+ 
+% Thanks in advance for your help.
+% Best regards,
+% Ward
+% --

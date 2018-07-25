@@ -1,57 +1,63 @@
 \chapter{Introduction}
-% a summary of the entire thing
-\section{Context/Motivation}
+% a summary of the introduction chapter
 
+\section{Problem Statement}
+\subsection*{Motivation}
 
-\section{Problem}
--Why this is a hard/open problem?
--State-of-the-Art
+\begin{itemize}
+    \item precision medicine: what is it and why it's good and we need it
+    \item it requires to handle large and heterogeneous data (clinical + genomic)
+    \item the more data exploited, better it is for it
+\end{itemize}
 
-\section{Insight}
--Solution overview/some detail (bigger picture)
-
-\section{Summary of research}
--Details of contribution
-
-5 Evidence of successful solution (eg evaluation results)
-6 Summary of contributions
-7 Paper outline
-
-Intro
-Goal: transmart 17.1 - i2b2 - medco (nice to have: shrine, transmart prev. Ver.)
-splitted up in 2 obj.
-Why open-source
-
-goal: common - privacy preserving
-
-§ the motivation
+%Being able to exploit large and heterogeneous clinical and genomic data is crucial for realizing the promise of  precision medicine to its full potential. Yet, due to the current presence of multiple and fragmented systems at different clinical sites, it is often extremely difficult to enable researchers to access the data they need. Privacy and security concerns also represent major obstacles that need to be overcome in order to get access to sensitive medical data that are usually not exposed by clinical sites for the fear of data leaks. 
 % todo: get inspiration from papers
+% 2 problems (here)  --> 2 objectives (in objective)
 
-§ the goal
+% IMPORTANT: why do these 2 objectives should be taken together, and not separately, and why not others
 
-These characteristics define two main objectives to fulfill. 
-First, the front end in question will need to be able to communicate with the main open-source several clinical research platforms, to cover a major part of the platforms used by researchers.
-Second, the front end , namely MedCo, the only privacy-preserving platform.
+\subsection*{Objectives}
+% check http://www.ceptara.com/blog/how-to-write-problem-statement
+%-Why this is a hard/open problem?
+%-State-of-the-Art not sufficient (refer to related work?)
+% goal: solving this problem: goal: common - privacy preserving
+
+% facilitating adoption / meaningful things -> open-source / docker / secure / etc (overlap with requirements? or should that go to the requirements? check how to split)
+% 2 problems (from motivations)  --> 2 objectives (here)
+
+
+% These characteristics define two main objectives to fulfill. 
+% First, the front end in question will need to be able to communicate with the main open-source several clinical research platforms, to cover a major part of the platforms used by researchers.
+% Second, the front end , namely MedCo, the only privacy-preserving platform.
 % todo: in the analyses of what are the platforms, mention what they are
 
---> focus on cohort exploration
-
-\section{Solution Requirements}
-\label{sec:requirements}
-- about how we want compatibility with the major open-source clinical research systems
-% in CCL: put how the requirements are met 
-- use of apis standard to easily integrate with others
-- unique front end to exploit several back ends: main open-source ones
-- support all the features of GB-> not a requirement, consequence of choosing GB//however a list of the UI features we want to have should be present
+% --> focus on cohort exploration (why?)
 
 
-todo: define first and second objectives (referenced after)
+\begin{itemize}
+    \item data scattered in several ways / all the constraints that prevent what said previously to be achieved
+    \item physically in different institutions / organizations
+    \item technologically heterogeneous, (backend systems, apis to access, semantic different, etc.)
+    \item legal constraints, risk of leaks
+    \item  patients reluctant to share their data
+\end{itemize}
 
-% todo: ack: hyve ,etc.
 
-% todo: if existing solutions are used: those are used by actual users and should not lose features, no change is desired from user p-o-v
+\section{Solution Overview}
 
-TODO: DEFINE WHAT OUTPUT WE WANT for data export
-TODO: define auth* schemes, euer mgmt, and all
+\begin{itemize}
+    \item big picture of the whole system in short
+\end{itemize}
 
-GB orig. functions: manage saved queries
+
+\section{Contributions}
+
+\begin{itemize}
+    \item list of contributions made
+    \item Evidence of successful solution (eg evaluation results)
+\end{itemize}
+
+% - what we do is a step in the direction of blabla
+
+\section{Outline}
+TBD

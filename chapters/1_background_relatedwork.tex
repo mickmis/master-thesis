@@ -7,7 +7,11 @@
 % First an overview of the different open-source clinical research systems is offered, 
 % after which the different front ends allowing to exploit them are presented.
 
-\subsection{Clinical Research Systems}
+% \subsection{Technologies}
+\subsection{tranSMART}
+
+\subsection{i2b2}
+% includes webcliend, workbench, etc.
 
 % talk about the inner data model of each
 
@@ -28,7 +32,7 @@
 % \subsubsection{SHRINE}
 % %TODO
 
-\subsubsection{PIC-SURE API / IRCT}
+\subsection{PIC-SURE API and IRCT}
 
 % % overview
 % The National Institutes of Health (NIH) of the U.S. government launched in 2013 the first phase of the Big Data to Knowledge (BD2K)~\cite{BD2K} whose one of the goal is to exploit the immense amount of big data information to advance knowledge in modern biomedical research.
@@ -42,11 +46,11 @@
 % Restful api for heteregeonous datasets ,decentralized fashion, access with single comm. Layer -> interoperability layer (check the api doc pdf)
 
 % IRCT components
-The IRCT implementation of the PIC-SURE API is the combination of four different components, that are open-source and available on~\cite{IRCT-github}. They are implemented in Java and use standard technologies: web application archive (WAR)~\cite{wiki:war} for deployment, Hibernate~\cite{wiki:hibernate} for data storage.
-First the Communication Layer (IRCT-CL) implements the RESTful service that is exposed and documented by~\cite{PIC-SURE-API}. 
-The core component is the Application Programming Interface (IRCT-API), it handles the execution of queries and processing of results.
-An instance can be extended using the IRCT Extension (IRCT-EXT) that provides hooks and additional features without having to modify the core code.
-Finally the Resource Interface (IRCT-RI) connects to the different resources through connectors.
+% The IRCT implementation of the PIC-SURE API is the combination of four different components, that are open-source and available on~\cite{IRCT-github}. They are implemented in Java and use standard technologies: web application archive (WAR)~\cite{wiki:war} for deployment, Hibernate~\cite{wiki:hibernate} for data storage.
+% First the Communication Layer (IRCT-CL) implements the RESTful service that is exposed and documented by~\cite{PIC-SURE-API}. 
+% The core component is the Application Programming Interface (IRCT-API), it handles the execution of queries and processing of results.
+% An instance can be extended using the IRCT Extension (IRCT-EXT) that provides hooks and additional features without having to modify the core code.
+% Finally the Resource Interface (IRCT-RI) connects to the different resources through connectors.
 
 
 %https://www.nature.com/articles/sdata201696
@@ -54,66 +58,65 @@ Finally the Resource Interface (IRCT-RI) connects to the different resources thr
 %info about hackaton: dana farber is looking for i2b2 frontend replacement 
 
 
-\paragraph*{PIC-SURE API Overview}
-PIC-SURE is resource based: each source of data (e.g. i2b2, tranSMART, etc.) is considered a resource.
-Each of these resources declare through their configuration the kind of clauses they support. 
-The configuration is done through the database.
-Four types of clauses are supported: \emph{select}, \emph{where}, \emph{process} and \emph{join}, but here we are mainly making use of \emph{select} and \emph{where}.
+% \paragraph*{PIC-SURE API Overview}
+% PIC-SURE is resource based: each source of data (e.g. i2b2, tranSMART, etc.) is considered a resource.
+% Each of these resources declare through their configuration the kind of clauses they support. 
+% The configuration is done through the database.
+% Four types of clauses are supported: \emph{select}, \emph{where}, \emph{process} and \emph{join}, but here we are mainly making use of \emph{select} and \emph{where}.
 
-% select
-The \emph{select} clauses specify the data that the user of the API wants extracted from the database.
-The resources declare what kind of operations their \emph{select} support, for example \emph{AGGREGATE} can be defined to extract aggregated values.
-Then each of the operations (or the default operation when none is declared), declare the fields they support.
-For \emph{AGGREGATE}, the resource could declare two fields:
-\begin{itemize}
-    \item \emph{FUNCTION}: what function to use among a list of permitted values, e.g. \emph{COUNT}, \emph{MIN}, \emph{MAX}
-    \item \emph{DIMENSION}: the dimension along which to do to the aggregation, e.g. \emph{PATIENT}
-\end{itemize}
-Each of the fields declare the type of value they take: either an enumerated value, or a data type such as \emph{String} or \emph{Integer} that has to specify the Java class implementing it.
-Example of two \emph{select} clauses:
-\begin{verbatim}
-"select": [ {
-    "operation": "AGGREGATE",
-    "fields": {
-        "FUNCTION": "COUNT",
-        "DIMENSION": "PATIENT"
-    }
-}, {
-    "field": {
-        "pui": "/resource/study/Age/",
-        "dataType": "INTEGER"
-    }
-} ]
-\end{verbatim}
+% % select
+% The \emph{select} clauses specify the data that the user of the API wants extracted from the database.
+% The resources declare what kind of operations their \emph{select} support, for example \emph{AGGREGATE} can be defined to extract aggregated values.
+% Then each of the operations (or the default operation when none is declared), declare the fields they support.
+% For \emph{AGGREGATE}, the resource could declare two fields:
+% \begin{itemize}
+%     \item \emph{FUNCTION}: what function to use among a list of permitted values, e.g. \emph{COUNT}, \emph{MIN}, \emph{MAX}
+%     \item \emph{DIMENSION}: the dimension along which to do to the aggregation, e.g. \emph{PATIENT}
+% \end{itemize}
+% Each of the fields declare the type of value they take: either an enumerated value, or a data type such as \emph{String} or \emph{Integer} that has to specify the Java class implementing it.
+% Example of two \emph{select} clauses:
+% \begin{verbatim}
+% "select": [ {
+%     "operation": "AGGREGATE",
+%     "fields": {
+%         "FUNCTION": "COUNT",
+%         "DIMENSION": "PATIENT"
+%     }
+% }, {
+%     "field": {
+%         "pui": "/resource/study/Age/",
+%         "dataType": "INTEGER"
+%     }
+% } ]
+% \end{verbatim}
 
-% where 
-The other main clause supported is \emph{where} and is used to specified constraints on the data to be selected.
-Just like for \emph{select} and the supported operations, the resource declares the predicates that \emph{where} supports.
-The predicates can have fields, and fields have a type: this is just like \emph{select}. 
-Example:
-\begin{verbatim}
-"where": [ {
-    "field": {
-        "pui": "/resource/study/Age/",
-        "dataType": "INTEGER"
-    },
-    "predicate": "CONSTRAIN_VALUE_NUMERIC",
-    "fields": {
-        "OPERATOR": ">=",
-        "CONSTRAINT": "20"
-    }
-} ]
-\end{verbatim}
+% % where 
+% The other main clause supported is \emph{where} and is used to specified constraints on the data to be selected.
+% Just like for \emph{select} and the supported operations, the resource declares the predicates that \emph{where} supports.
+% The predicates can have fields, and fields have a type: this is just like \emph{select}. 
+% Example:
+% \begin{verbatim}
+% "where": [ {
+%     "field": {
+%         "pui": "/resource/study/Age/",
+%         "dataType": "INTEGER"
+%     },
+%     "predicate": "CONSTRAIN_VALUE_NUMERIC",
+%     "fields": {
+%         "OPERATOR": ">=",
+%         "CONSTRAINT": "20"
+%     }
+% } ]
+% \end{verbatim}
 
-% tree
-In order to construct queries made of the clauses previously described, the resources expose a tree of entities.
-Each of those entities, if they are queryable, declare a data type.
-Each of the predicates used for the \emph{where} clauses also declare one or more supported data types: this is the mechanism used to know which entities support which predicates.
-In order to link the tree nodes together, each resource declares what kind of relationships between nodes exist.
-For example if the tree supports the relationship \verb|CHILDREN|, a client can request all the children of a certain node. 
+% % tree
+% In order to construct queries made of the clauses previously described, the resources expose a tree of entities.
+% Each of those entities, if they are queryable, declare a data type.
+% Each of the predicates used for the \emph{where} clauses also declare one or more supported data types: this is the mechanism used to know which entities support which predicates.
+% In order to link the tree nodes together, each resource declares what kind of relationships between nodes exist.
+% For example if the tree supports the relationship \verb|CHILDREN|, a client can request all the children of a certain node. 
 
-% \subsection{Cohort Exploration Front Ends}
-% \subsubsection{Glowing Bear}
+\subsection{Glowing Bear}
 % %§ GB: Most recent Angular version is now ng5, AngularJS refers to the first generation of Angular which is sth. glowing bear no longer uses. see https://blog.angular.io/version-5-0-0-of-angular-now-available-37e414935ced
 
 % \subsubsection{tranSMARTApp}
@@ -139,78 +142,105 @@ For example if the tree supports the relationship \verb|CHILDREN|, a client can 
 % -> explore it
 % have a list of data models (perpendicular to list of back end systems)
 
-\subsection{OpenID Connect}
+\subsection{OpenID Connect and Keycloak}
 
-OpenID Connect is a protocol enabling authentication and authorization using a third-party implementing the server-side of the protocol.
-It has several types of flow and many different options, but here we focus on what we are using in our solutions, i.e. the implicit flow.
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=1\textwidth]{figures/oidc_implicit_flow.png}
-    \caption{OpenID Connect Implicit Flow}
-    \label{fig:oidcimplicit}
-\end{figure}
-
-The OIDC implicit flow as shown figure~\ref{fig:oidcimplicit} follows the following steps:
-\begin{enumerate}
-    \item The user requests the client identifier
-    \item The OIDC client sends its client identifier
-    \item The user performs the authentication with the OIDC server
-    \item Which gets him its token
-    \item In parallel to this the OIDC client requests the signing public keys used by the server
-    \item The OIDC server sends those keys to the OIDC client
-    \item The user makes use of the API exposed by the OIDC client, and embed in the HTTP headers the authenticating token
-    \item The client verify the validity of the token using the public signing keys of the server, and extract if necessary the JWT claims (authorizations)
-    \item The OIDC client can process the request and sends back the response to the user
-\end{enumerate}
+% todo: list of requirements from the standards
 
 
-\subsubsection{JSON Web Token}
-A JWT is three distinct base64-encoded values separated by a dot: two JSON objects and a signature.
-The first is the header, which contains metadata about the JWT, such as the signing algorithm used and the identifier of the key used to perform the signing.
-Example:
+% OpenID Connect is a protocol enabling authentication and authorization using a third-party implementing the server-side of the protocol.
+% It has several types of flow and many different options, but here we focus on what we are using in our solutions, i.e. the implicit flow.
 
-\begin{verbatim}
-{
-  "alg": "RS256",
-  "typ": "JWT",
-  "kid": "eTFrdyrNxXLNHI7p0Ywybc7z1SBHTEcqWcMTybtdvQY"
-}
-\end{verbatim}
+% \begin{figure}[ht]
+%     \centering
+%     \includegraphics[width=1\textwidth]{figures/oidc_implicit_flow.png}
+%     \caption{OpenID Connect Implicit Flow}
+%     \label{fig:oidcimplicit}
+% \end{figure}
+% % todo: 5/6 not clear
+% % todo graph: split up oidc clients? 
+% % todo graph: 4/5/6: put some thgins as offline 
 
-The second is the payload of the JWT, and contains the identity of the authenticated user, its authorizations, and can contain any kind of custom fields set up by the administrator of the OIDC server.
-Other standard fields include expiration time, client identifier, token issuer, etc.
-Those data are called the JWT claims.
-Example:
+% The OIDC implicit flow as shown figure~\ref{fig:oidcimplicit} follows the following steps:
+% \begin{enumerate}
+%     \item The user requests the client identifier
+%     \item The OIDC client sends its client identifier
+%     \item The user performs the authentication with the OIDC server
+%     \item Which gets him its token
+%     \item In parallel to this the OIDC client requests the signing public keys used by the server
+%     \item The OIDC server sends those keys to the OIDC client
+%     \item The user makes use of the API exposed by the OIDC client, and embed in the HTTP headers the authenticating token
+%     \item The client verify the validity of the token using the public signing keys of the server, and extract if necessary the JWT claims (authorizations)
+%     \item The OIDC client can process the request and sends back the response to the user
+% \end{enumerate}
 
-\begin{verbatim}
-{
-  "jti": "6fd4f480-05ce-471f-a4ef-f35cb6a8e0d0",
-  "exp": 1523454086,
-  "nbf": 0,
-  "iat": 1523453186,
-  "iss": "http://localhost:8081/auth/realms/master",
-  "aud": "glowing-bear",
-  "sub": "df110f80-fa32-4174-970d-e42a7b24ae9f",
-  "typ": "Bearer",
-  "azp": "glowing-bear",
-  "nonce": "N0.28573339803406971523453198656",
-  "auth_time": 1523453186,
-  "session_state": "74cd6393-9d24-4140-a87a-9e557f45499b",
-  "acr": "1",
-  "resource_access": {
-    "account": {
-      "roles": [
-        "role1",
-        "role2"
-      ]
-    }
-  },
-  "preferred_username": "test",
-  "email": "test@test.com"
-}
-\end{verbatim}
 
-The last value is a signature generated by the OIDC server that serves two purposes: verify that the issuer was indeed the OIDC server, and protect the integrity of the token.
-Several algorithm can be used to generate this signature, here we use the algorithm \emph{RS256}, i.e. the encryption of a \emph{SHA256} hash using the asymmetric cryptosystem RSA.
+% \subsubsection{JSON Web Token}
+% A JWT is three distinct base64-encoded values separated by a dot: two JSON objects and a signature.
+% The first is the header, which contains metadata about the JWT, such as the signing algorithm used and the identifier of the key used to perform the signing.
+% Example:
+
+% \begin{verbatim}
+% {
+%   "alg": "RS256",
+%   "typ": "JWT",
+%   "kid": "eTFrdyrNxXLNHI7p0Ywybc7z1SBHTEcqWcMTybtdvQY"
+% }
+% \end{verbatim}
+
+% The second is the payload of the JWT, and contains the identity of the authenticated user, its authorizations, and can contain any kind of custom fields set up by the administrator of the OIDC server.
+% Other standard fields include expiration time, client identifier, token issuer, etc.
+% Those data are called the JWT claims.
+% Example:
+
+% \begin{verbatim}
+% {
+%   "jti": "6fd4f480-05ce-471f-a4ef-f35cb6a8e0d0",
+%   "exp": 1523454086,
+%   "nbf": 0,
+%   "iat": 1523453186,
+%   "iss": "http://localhost:8081/auth/realms/master",
+%   "aud": "glowing-bear",
+%   "sub": "df110f80-fa32-4174-970d-e42a7b24ae9f",
+%   "typ": "Bearer",
+%   "azp": "glowing-bear",
+%   "nonce": "N0.28573339803406971523453198656",
+%   "auth_time": 1523453186,
+%   "session_state": "74cd6393-9d24-4140-a87a-9e557f45499b",
+%   "acr": "1",
+%   "resource_access": {
+%     "account": {
+%       "roles": [
+%         "role1",
+%         "role2"
+%       ]
+%     }
+%   },
+%   "preferred_username": "test",
+%   "email": "test@test.com"
+% }
+% \end{verbatim}
+
+% The last value is a signature generated by the OIDC server that serves two purposes: verify that the issuer was indeed the OIDC server, and protect the integrity of the token.
+% Several algorithm can be used to generate this signature, here we use the algorithm \emph{RS256}, i.e. the encryption of a \emph{SHA256} hash using the asymmetric cryptosystem RSA.
 % todo: cite rsa paper and sha and jwt and oidc
+
+\subsection{MedCo}
+
+% -------------------------------------------------------
+\section{Related Work}
+% things that could be used to solve our problem as a whole (this is different form technological choices!)
+% split related in 2 for the 2 objectives: this makes sense because they are relatively different
+\begin{itemize}
+    \item l-i2b2-facade + l-i2b2-shrine
+    \item OLAP / MDX
+    \item other approaches to medical data browsing?
+    \item SHRINE
+    \item privacy-preserving solutions
+\end{itemize}
+
+% l-i2b2: https://www.ncbi.nlm.nih.gov/pubmed/29295360
+% https://github.com/li2b2
+
+% check citations from other papers (bd2k and others)
+% new pub. release of pic sure from avillach : comparison (will be presented end of june) or not? check w/ ward
+% : check medco papers for privacy preserving solutions

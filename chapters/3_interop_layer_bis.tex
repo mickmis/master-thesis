@@ -1,4 +1,5 @@
 \newpage
+% todo: add about transmart docker (in appendix maybe?)
 % todo: explanation about data table
 % todo: explanations+ modifs about transmart 16.2
 % todo: integration in common interface
@@ -32,7 +33,8 @@ It is configured with a local user data source managed by itself, and one client
 
 % IRCT
 IRCT is compiled from sources and deployed using Docker.
-The version used is TBD.
+The version used is a fork of the latest version on the master branch of the repository. 
+It is regularly rebased to keep track of the changes.
 It is configured to use one local instance of each type of supported back end systems: i2b2, tranSMART 17.1, SHRINE.
 The configuration is done through the local PostgreSQL database.
 
@@ -178,6 +180,7 @@ Response:
 The tranSMART REST API v2 has several calls that are specific to studies, while the PIC-SURE API does not have a direct equivalent to this.
 However since the studies are completely embedded within the concept tree, i.e. a concept belongs to one study or it is cross-study, they can simply be abstracted into the tree of entities exposed by PIC-SURE: we create a \verb|STUDY| data type for the tree entities (see~\ref{sec:gb-tree}).
 \verb|TreeNodeService.isTreeNodeAStudy()| implements the recognition of the \verb|STUDY| data type.
+%todo: in model
 
 % list of studies
 If the resource supports it, \verb|ConstraintService.loadStudies()| loads the list of studies by calling \verb|ResourceService.getStudies()|, which is modified to use the following PIC-SURE call:
@@ -198,8 +201,24 @@ POST /queryService/runQuery
 %\subparagraph{Pedigree / Relation Type}
 % todo: GB asks transmart for the relation types, but for now we are putting them into permitted values of irct definition, change that ?
 
+
 \subsubsection{Concepts Tree}
 \label{sec:gb-tree}
+% todo: for i2b2 (when no greedy loading possible): node per node loading
+% todo: this means also no constraints list (dropdown) available / also tree search
+% transmart keeps the depth loading
+
+% todo: say mechanism
+% in GB: stay as currently, loading everything in background 
+% in IRCT: we cache the tree (in tree service to have it once?)
+% or load it during the setup?
+% problem: tree may be user specific!!!
+%transmart: cache is study specific, i2b2: is project specific
+% from GB side: either load everything, or ndoe per node???
+%from GB: ALL-CHILDREN (and not depthxx) todo
+% irct: support child and all-children
+%for i2b2 that will be sloow to get all nodes on the server side
+% also need for step 2 the tree
 
 % modification of request (api call)
 The API call in \verb|ResourceService.getTreeNodes()| is modified according to the following:
@@ -256,6 +275,7 @@ This allows all the other parts of Glowing Bear that use the node to access the 
 
 
 \subsubsection{Query Step 1: Constraints}
+% todo : concept_enum only, values are requested
 
 % GB overall workflow for queries
 The original Glowing Bear workflow for creating the constraints is the following: \\
@@ -813,6 +833,7 @@ GET /resultService/availableFormats/<result_id>
 \subsubsection{IRCT Core Modifications}
 % todo: version from github to select: which? there seem to be a new query param (commit on feb 2) only\_count, which may prove valuable for GB << important question to solve, check out a specific commit? last release is not recent enough as of now 
 % todo: auth mechanism? TBD
+% todo: no need for modif resources, we can access the user token from the resource (user is available as a field)
 
 \paragraph{Saving Queries: Additional API Calls}
 \label{sec:irctsavedqueries}
@@ -1010,6 +1031,8 @@ All the predicates and operations described before are translated into the nativ
 The is a special case: if the queried concept belongs to a study, a study constraint is added, while if the concept is cross-study it is left as is.
 The nesting of queries described section~\ref{sec:gb-logical-operators} is implemented in the resource and translated in the native API.
 
+%todo: construction of query: need to fetch in tree the constraint to be used
+
 \paragraph{SHRINE}
 The SHRINE API is basically a limited i2b2 API (saves for some very minor additional fields).
 It supports only counts, which means no data exports.
@@ -1045,7 +1068,19 @@ And the following \emph{where} predicates:
 \subsubsection{i2b2 \& derivatives}
 % todo: class to be implemented i saw about: https://github.com/i2b2/i2b2-core-server/tree/master/edu.harvard.i2b2.pm/src/edu/harvard/i2b2/pm/util
 TBD: modify PM to support OIDC (will support medco and shrine as well)
+add impl. for check token, considered as a simple pw
+elaborate on this subject
+set istoken to true
+SessionKey: is the tag for i2b2 session
+user mgmt?
 
 \subsubsection{tranSMART 17.1}
 % todo
 TBD: using spring security, get OIDC compatibility
+authorizations?
+
+
+% todo: CHILD_DEPTH: how it works (decided server side, incremental, etc.)
+% todo: implementation specifics, i2b2 cache, only project/categories level
+% todo: i2b2 modifiers: todo
+% i2b2: not possible to query 2 projects at same time
