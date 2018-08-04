@@ -4,7 +4,46 @@
 % \section{Implementation}
 % thesis: medco subject to previous work of author, modified as such... (check out paper for more info)
 
+\section{Detailed Workflow}
+
 \begin{itemize}
-    \item shrine drop
-    \item 
+    \item medco workflow in steps using glowing bear / pic-sure and no shrine
+\end{itemize}
+
+\section{Glowing Bear Query Construction}
+
+assumptions made:
+- ontologies match exactly
+- authentication: user exists in the 3 pms?
+
+
+\begin{itemize}
+    \item tree browsing, number to encrypt in the tree
+    \item same as described before, with a special data type and predicate used
+    \item encryption of terms 
+    \item format of encrypted terms
+\end{itemize}
+
+% gen temporary priv / pub pair of keys for user
+% encrypt with group.toml file from config the values to be sent
+% decrypt w/ priv key the results
+
+\section{IRCT Query Broadcast}
+\begin{itemize}
+    \item threads run queries against medco nodes using i2b2 api
+\end{itemize}
+
+\section{MedCo Query Processing}
+\begin{itemize}
+    \item summarize how medco works
+    \item modifications made: shrine drop, ?
+\end{itemize}
+
+% each ontologiy at each site has 2 ontologies, clear and not clear, explorable by client or not 
+% schemas "medconotology" " i2b2metadata_i2b2"
+
+\section{Glowing Bear Result Processing}
+\begin{itemize}
+    \item format of result
+    \item decryption and display
 \end{itemize}

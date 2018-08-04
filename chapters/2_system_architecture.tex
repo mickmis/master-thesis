@@ -1,0 +1,250 @@
+\chapter{System Architecture}
+\label{sec:sysarchitecture}
+
+To design a system fulfilling the requirements listed in \ref{sec:requirements}, we start by the bottom with first choosing its basic building blocks, and then we explore the different ways in which they can be assembled.
+Following the requirements, we only consider open-source technologies.
+
+
+\section{Choice of Open-Source Technologies}
+
+% outline
+The choice of the open-source technologies to use depends mainly on the clinical research platforms that must be supported, which will be our first step in this section.
+We then do a review of the different existing open-source front end systems to determine if one of them is worth being used for our solution.
+Finally we motivate the use of an identity provider software and choose one.
+
+\subsection{Back End Systems: Clinical Research Platforms}
+
+% what is a clinical research platform / use-case
+A clinical research platform is a back end software (i.e. running on server, serving request to clients), that stores any kind of medical data and can answer queries, with the purpose of identifying patient cohorts, and possibly performing analytics on those data.
+Queries on this data can be for any purpose, here follows a few use-cases of this kind of platform.
+A medical researcher want to recruit a patient cohort for a study they want to conduct. They need to select patients with a te
+pharma testing drugs study
+ongologist for persolized medicine: looks for response to treatment of patient according to genes.
+
+% Altogether these systems serve an enormous of data, and being able to access them from a unique front end would prove much beneficial to researchers.
+
+% As stated section~\ref{sec:requirements}, we target compatibility with the main open-source clinical research platforms. 
+% In that area the two main players are \emph{i2b2} and \emph{tranSMART}.
+% Less widespread, and building on \emph{i2b2}, also exists \emph{SHRINE} and \emph{MedCo}.
+
+% § about i2b2: why support it
+
+% § about tranSMART: why support it 
+
+% § about MedCo: why support it
+
+
+% what exist there, which one we are targetting the compatibility for and why // descriptive part in related work / background
+
+
+
+\begin{itemize}
+    \item why using IRCT and not i2b2 directly from GB
+    \item why not technologies from related work
+\end{itemize}
+
+
+% need for transmart and i2b2 because major technologies
+% compatible front-end
+
+% need for front and back end
+% need for http
+
+
+
+\subsection{Front End System: Cohort Explorers}
+% front end: need for web solution, better flexibilty, use of the apis, better separation of concerns
+
+% present i2b2 and transmartapp, and eliminate them
+Each of the previously retained platforms have their official front end: the \emph{i2b2 webclient} for i2b2, and {tranSMARTApp} for tranSMART.
+One option for choosing our front end would be to choose one of those, and implement whatever we additionally there.
+
+% do no retain them
+However they both suffer from two major problems:
+\begin{enumerate*}
+    \item they use outdated technologies;
+    \item they are very tightly linked to their back end.
+\end{enumerate*}
+The \emph{i2b2 webclient} uses \emph{yui}~\cite{todo}, a javascript framework developed by Yahoo, and not supported anymore since 2014. 
+\emph{tranSMARTApp} is a web application rendered on the server-side, alongside tranSMART, and not a pure web client.
+
+% introduce gb
+\emph{Glowing Bear} 
+modern
+agnostic
+
+
+% cohort exploration: § what's available (compatible with previously selected systems)
+\begin{itemize}
+    \item GB
+    \item i2b2 webclient: outdated technologies
+    \item i2b2 workbench: heavy client, not portable enough
+    \item transmartApp 
+    \item from sratch
+    \item borderline ui
+\end{itemize}
+
+% candidates from transmart: https://wiki.transmartfoundation.org/display/transmartwiki/User+interfaces
+
+% § Why GB 
+% already compatible with 17.1
+
+% § what does gb need to work (what is it using from the transmart rest api?)
+
+% summary
+%--> should conclude with what front end we want to use : GB
+%need for not changing current user experience for clients
+
+\subsection{Identity Provider}
+
+Such a system with different components calls for a common and standardized way of handling authentication and authorization.
+
+
+why: can be externalized, uses standard, flexilibity, integrate with existing
+
+
+\section{System Architecture Scenarios}
+
+Now that we have the basic building blocks of our solution, we design a system where they fit together in a coherent way.
+
+
+\begin{itemize}
+    \item we have the building blocks: how to assemble them
+\end{itemize}
+
+% Now that we chose the fundamental open-source building blocks of our solution, we must fit them together.
+% We have two natural approaches to do so: with or without a middle component.
+
+% there are two main approaches we can use to assemble them together.
+
+
+% Assembling these tools together can take several roads, present them here.
+% weigh the procs and cons
+% 2 main models: with or wihtout a backend component
+% w/ backend component: can use IRCT as the backend
+% Alternative models? (OLAP/MDX investigations? To be discussed)
+% The final decision
+
+% --> should conclude that we want the scenario 2, i.e. with a backend, but supporting transmart through glowing bear
+
+
+% then paragraph to introduce the use of pic sure, which is an optional implementation option, but needs investigations -> next section
+
+% backend scenario> either implement or use sth existing
+
+% 2 transversal questions to answer: 
+% - impl. in front or back end
+% - using pic-sure or not 
+
+\subsection{Localization of the Interoperability Layer}
+
+
+% % why no transmart rest v2
+% Compatibility with tranSMART versions 17.1+ is later restored through the implementation of an IRCT resource interface (see~\ref{sec:irct-res-transmart-17.1}).
+% The reasoning behind this choice is that maintaining compatibility of two different but similar APIs in Glowing Bear would be possible, but complicated, which translates into additional efforts spent on the implementation, and later on the maintenance of the code: this would be sub-optimal as these efforts are better spent elsewhere.
+% The potential downside of this choice is a time delay for the requests as we are introducing an additional middle-component, these are formally measured in a later chapter.%chapter~\ref{chap:perfeval}. % todo: ref
+
+\begin{itemize}
+    \item front-end or back-end
+\end{itemize}
+
+
+\subsection{Using the PIC-SURE API} no: using a pre-existing translation layer -> borderline, it is both UI and translation layer
+
+BORDERLINE
+middleware api: abstract data sources
+server: make the queries?
+ui: ui...
+
+% todo: argue on why not implementing i2b2 directly in GB (maintainalitity, future proof, etc.)
+
+\begin{itemize}
+    \item yes or no
+\end{itemize}
+-> yes but not for transmart
+explain why by taking arguments from when planning switch was made
+
+% goal of investigations
+% Given the choice of the scenario that makes use of a backend, the option of using the IRCT as the backend for the system is to be evaluated.
+% On a first look it looks good 
+
+% % technical analysis
+% questions raised --> cf next §
+
+% % questions raised and answered
+% This first technical analysis raised some questions on IRCT, becasue we want the , we woul
+% Because using IRCT introduce a heavy dependency towards it for Glowing Bear, 
+
+
+% how it allows us to cover the requirements
+
+
+% Decision on implementation scenario \& technologies
+% Description of 2 scenarios
+% PIC-SURE API Investigations
+% Estimation of effort to integrate tranSMART 17.1: too much
+
+
+% PIC-SURE API Investigations
+% § what is being investigated, link to things explained before (why this is being investigated as potential solution)
+
+% analysis shoold be targeted: what is its goal? evaluate it meets the requirements of GB
+
+% § questions that came up (list): from analyse of what’s available online, interrogations came up, include also the answers (check out list of questions that was made)
+
+
+% --> should conclude here that we want to use pic sure
+
+
+\subsubsection*{tranSMART Support}
+\begin{itemize}
+    \item in GB or through PIC-SURE, since pic-sure chosen at that point
+\end{itemize}
+
+
+
+\section{System Design}
+
+\subsection{Technical Choices Summary}
+
+We summarize our technical choices:
+
+\begin{itemize}
+    \item Supported clinical research platforms: \emph{i2b2}, \emph{tranSMART 17.1}, \emph{MedCo}
+    \item Interoperability layer for i2b2 and MedCo: \emph{IRCT} (PIC-SURE API)
+    \item User interface: \emph{Glowing Bear}
+\end{itemize}
+
+
+\subsection{Technical Considerations}
+
+Additionally we take into consideration software engineering considerations, which allows us to solve or alleviate the technical constraints listed in the requirements.
+
+
+
+% practical runtime: , i.e. a negligible overhead when compared to the standalone systems
+% future-proof: , i.e. extensible, use of apis standard to easily integrate with others, modern tech
+%\item support all the features of GB-> not a requirement, consequence of choosing GB//however a list of the UI features we want to have should be present // i.e. not downgrading experience for existing users
+    
+% todo: if existing solutions are used: those are used by actual users and should not lose features, no change is desired from user p-o-v
+% seemingless integration with existing systems: use of apis standardized , promote reuse and integration
+
+
+% using web apis \ todo: elaborate rest, rephrase
+While these systems may differ, most of them can be queried through RESTful Web APIs.
+Web APIs allows to interact with systems in a platform and technology independent way, by using HTTP calls \cite{todo}.
+RESTful APIs are interfaces that enforce a certain set of constraint (see \cite{todo}) that when used are inducing a number of properties that make their use and programming easier.
+Using RESTful Web APIs contributes to make the system more open and extensible, thus helps meeting the requirements.
+
+
+
+\subsection{System Overview}
+\begin{itemize}
+    \item graph overview
+\end{itemize}
+
+
+\subsubsection*{Workflow}
+\begin{itemize}
+    \item high-level and summarized workflow of the system
+\end{itemize}

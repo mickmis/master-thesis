@@ -1,276 +1,276 @@
 \chapter{APIs Usage Examples}
 
-This appendix gives examples on how to use some APIs that are referred to in the thesis.
+% This appendix gives examples on how to use some APIs that are referred to in the thesis.
 
 \section{tranSMART REST API v2}
 
 % todo: make better and more
 % todo: contains REAL examples (i.e. real response)
-\paragraph{List of studies}
-The list of available studies is requested:
-\begin{verbatim}
-GET /v2/studies
-\end{verbatim}
+% \paragraph{List of studies}
+% The list of available studies is requested:
+% \begin{verbatim}
+% GET /v2/studies
+% \end{verbatim}
 
-Response:
-\begin{verbatim}
-{
-  "studies": 
-  [
-    {
-      "id": -20,
-      "studyId": "CATEGORICAL_VALUES",
-      "bioExperimentId": -10,
-      "dimensions": 
-      [
-        "concept",
-        "patient",
-        "study"
-      ]
-    },
-    ...
-}
-\end{verbatim}
+% Response:
+% \begin{verbatim}
+% {
+%   "studies": 
+%   [
+%     {
+%       "id": -20,
+%       "studyId": "CATEGORICAL_VALUES",
+%       "bioExperimentId": -10,
+%       "dimensions": 
+%       [
+%         "concept",
+%         "patient",
+%         "study"
+%       ]
+%     },
+%     ...
+% }
+% \end{verbatim}
 
-\paragraph{Query Terms Tree}
-The tree of the queryable terms is recuperated, with a depth of 2:
-\begin{verbatim}
-GET /v2/tree_nodes?root=&depth=2&tags=true
-\end{verbatim}
+% \paragraph{Query Terms Tree}
+% The tree of the queryable terms is recuperated, with a depth of 2:
+% \begin{verbatim}
+% GET /v2/tree_nodes?root=&depth=2&tags=true
+% \end{verbatim}
 
-Response:
-\begin{verbatim}
-{
-  "tree_nodes":
-    [
-      {
-        "name":"Vital Signs",
-        "fullName":"\Vital Signs\",
-        "name":"Vital Signs",
-        "type":"UNKNOWN",
-        "visualAttributes": ["FOLDER","ACTIVE"], 
-        "children": [
-          {
-            "name":"Heart Rate",
-            "fullName":"\Vital Signs\Heart Rate\",
-            "conceptCode":"VSIGN:HR",
-            "conceptPath":"\Vital Signs\Heart Rate\",
-            "name":"Heart Rate",
-            "type":"NUMERIC",
-            "visualAttributes":["LEAF","ACTIVE","NUMERICAL"],
-            "constraint": {
-              "type": "concept",
-              "conceptCode": "VSIGN:HR"
-            }
-          }
-        ]
-      },
-      ...
-    ]
-}
-\end{verbatim}
+% Response:
+% \begin{verbatim}
+% {
+%   "tree_nodes":
+%     [
+%       {
+%         "name":"Vital Signs",
+%         "fullName":"\Vital Signs\",
+%         "name":"Vital Signs",
+%         "type":"UNKNOWN",
+%         "visualAttributes": ["FOLDER","ACTIVE"], 
+%         "children": [
+%           {
+%             "name":"Heart Rate",
+%             "fullName":"\Vital Signs\Heart Rate\",
+%             "conceptCode":"VSIGN:HR",
+%             "conceptPath":"\Vital Signs\Heart Rate\",
+%             "name":"Heart Rate",
+%             "type":"NUMERIC",
+%             "visualAttributes":["LEAF","ACTIVE","NUMERICAL"],
+%             "constraint": {
+%               "type": "concept",
+%               "conceptCode": "VSIGN:HR"
+%             }
+%           }
+%         ]
+%       },
+%       ...
+%     ]
+% }
+% \end{verbatim}
 
-\paragraph{Saved Queries}
-The list of previously saved queries is retrieved:
-\begin{verbatim}
-GET /v2/queries
-\end{verbatim}
+% \paragraph{Saved Queries}
+% The list of previously saved queries is retrieved:
+% \begin{verbatim}
+% GET /v2/queries
+% \end{verbatim}
 
-Response:
-\begin{verbatim}
-{
-  "id": 1,
-  "name": "testquery",
-  "patientsQuery": {
-    "constraint": {
-      "args": 
-      [
-        {
-          "conceptCode": "birthdate",
-          "conceptPath": "\Demographics\Birth Date\",
-          "fullName": "\Projects\Survey 1\Demographics\Birth Date\",
-          "name": "Birth Date",
-          "type": "concept",
-          "valueType": "DATE"
-        },
-        {
-          "studyId": "SURVEY1",
-          "type": "study_name"
-        }
-      ],
-      "type": "and"
-    },
-    "dimension": "patient",
-    "type": "subselection"
-  },
-  "observationsQuery": {
-    "data": [ ]
-  },
-  "apiVersion": "2.0",
-  "bookmarked": false,
-  "createDate": "2018-03-11T15:30:07Z",
-  "updateDate": "2018-03-11T15:30:07Z"
-}
-\end{verbatim}
-
-
-\paragraph{Query}
-
-\begin{verbatim}
-POST /v2/observations/counts_per_study_and_concept
-
-{
-  "constraint": {
-    "type": "or",
-    "args": [
-      {
-        "type": "subselection",
-        "dimension": "patient",
-        "constraint": {
-          "type": "and",
-          "args": [
-            {
-              "type": "concept",
-              "conceptCode": "birthdate"
-            },
-            {
-              "type": "study_name",
-              "studyId": "SURVEY1"
-            }
-          ]
-        }
-      },
-      {
-        "type": "subselection",
-        "dimension": "patient",
-        "constraint": {
-          "type": "and",
-          "args": [
-            {
-              "type": "concept",
-              "conceptCode": "O1KP:CAT1"
-            },
-            {
-              "type": "study_name",
-              "studyId": "ORACLE_1000_PATIENT"
-            }
-          ]
-        }
-      }
-    ]
-  }
-}
-\end{verbatim}
-
-\subsection{Glowing Bear Workflow}
-calls:
---- init step 0
-1. /studies: list of studies, displayed under "Public Studies", some under "Private Studies" (distinction how??), and more, but how exactly are they mapped to the tree?
-
-2. --> they are mapped with call to /tree\_nodes?root=\\ => each of the concept has a studyId to do the mapping
---> call to /tree\_nodes has also parameters depth --> IRCT only has depth 1, tree traversal in UI might need modifs
-
-3. /queries: list of saved queries returned
-
-4. /jobs: export jobs (running or not) --> not sure how IRCT handles that -> investigate / might need a change
-
-5. /counts\_per\_study\_and\_concept: return counts for all studies / sub things -> see if how to map to irct, either as data or as process?
-
-6. /counts: with param true, to display the total counts available
-
---- query step 1
-7. /aggregates\_per\_concept : metadata of the concept, to display min max count etc. (aggregate data)
-triggered on drag n drop of concept
---> use aggregate just as scidb again (so this should be a requirement of GB-or if not feature disabled)
-
-POST /v2/observations/aggregates\_per\_concept
-{constraint: {type: "concept", conceptCode: "O1KP:AGE"}}
-
-{
-  "aggregatesPerConcept": {
-    "O1KP:AGE": {
-      "numericalValueAggregates": {
-        "avg": 51.25,
-        "count": 1200,
-        "max": 65.0,
-        "min": 50.0,
-        "stdDev": 4.147509477069983
-      }
-    }
-  }
-}
+% Response:
+% \begin{verbatim}
+% {
+%   "id": 1,
+%   "name": "testquery",
+%   "patientsQuery": {
+%     "constraint": {
+%       "args": 
+%       [
+%         {
+%           "conceptCode": "birthdate",
+%           "conceptPath": "\Demographics\Birth Date\",
+%           "fullName": "\Projects\Survey 1\Demographics\Birth Date\",
+%           "name": "Birth Date",
+%           "type": "concept",
+%           "valueType": "DATE"
+%         },
+%         {
+%           "studyId": "SURVEY1",
+%           "type": "study_name"
+%         }
+%       ],
+%       "type": "and"
+%     },
+%     "dimension": "patient",
+%     "type": "subselection"
+%   },
+%   "observationsQuery": {
+%     "data": [ ]
+%   },
+%   "apiVersion": "2.0",
+%   "bookmarked": false,
+%   "createDate": "2018-03-11T15:30:07Z",
+%   "updateDate": "2018-03-11T15:30:07Z"
+% }
+% \end{verbatim}
 
 
-8. /elements: param contraint: which concept // not sure of what the answer if for?
-GET /v2/dimensions/trial\%20visit/elements
-constraint:{"type":"concept","conceptCode":"O1KP:AGE"}
+% \paragraph{Query}
 
-{
-  "elements": 
-  [
-    {
-      "id": -101,
-      "relTimeLabel": "General",
-      "relTimeUnit": null,
-      "relTime": null
-    }
-  ]
-}
+% \begin{verbatim}
+% POST /v2/observations/counts_per_study_and_concept
+
+% {
+%   "constraint": {
+%     "type": "or",
+%     "args": [
+%       {
+%         "type": "subselection",
+%         "dimension": "patient",
+%         "constraint": {
+%           "type": "and",
+%           "args": [
+%             {
+%               "type": "concept",
+%               "conceptCode": "birthdate"
+%             },
+%             {
+%               "type": "study_name",
+%               "studyId": "SURVEY1"
+%             }
+%           ]
+%         }
+%       },
+%       {
+%         "type": "subselection",
+%         "dimension": "patient",
+%         "constraint": {
+%           "type": "and",
+%           "args": [
+%             {
+%               "type": "concept",
+%               "conceptCode": "O1KP:CAT1"
+%             },
+%             {
+%               "type": "study_name",
+%               "studyId": "ORACLE_1000_PATIENT"
+%             }
+%           ]
+%         }
+%       }
+%     ]
+%   }
+% }
+% \end{verbatim}
+
+% \subsection{Glowing Bear Workflow}
+% calls:
+% --- init step 0
+% 1. /studies: list of studies, displayed under "Public Studies", some under "Private Studies" (distinction how??), and more, but how exactly are they mapped to the tree?
+
+% 2. --> they are mapped with call to /tree\_nodes?root=\\ => each of the concept has a studyId to do the mapping
+% --> call to /tree\_nodes has also parameters depth --> IRCT only has depth 1, tree traversal in UI might need modifs
+
+% 3. /queries: list of saved queries returned
+
+% 4. /jobs: export jobs (running or not) --> not sure how IRCT handles that -> investigate / might need a change
+
+% 5. /counts\_per\_study\_and\_concept: return counts for all studies / sub things -> see if how to map to irct, either as data or as process?
+
+% 6. /counts: with param true, to display the total counts available
+
+% --- query step 1
+% 7. /aggregates\_per\_concept : metadata of the concept, to display min max count etc. (aggregate data)
+% triggered on drag n drop of concept
+% --> use aggregate just as scidb again (so this should be a requirement of GB-or if not feature disabled)
+
+% POST /v2/observations/aggregates\_per\_concept
+% {constraint: {type: "concept", conceptCode: "O1KP:AGE"}}
+
+% {
+%   "aggregatesPerConcept": {
+%     "O1KP:AGE": {
+%       "numericalValueAggregates": {
+%         "avg": 51.25,
+%         "count": 1200,
+%         "max": 65.0,
+%         "min": 50.0,
+%         "stdDev": 4.147509477069983
+%       }
+%     }
+%   }
+% }
 
 
-starting here possible to change constraints \& concepts in UI, then click on update counts:
-9. /counts\_per\_study\_and\_concept: update the counts according to the selected concepts-> return all relevant count (to update the tree) // constraint as param
-POST /v2/observations/counts\_per\_study\_and\_concept
-{
-  "constraint": {
-    "type": "subselection",
-    "dimension": "patient",
-    "constraint": {
-      "type": "and",
-      "args": [
-        {
-          "type": "and",
-          "args": [
-            {
-              "type": "concept",
-              "conceptCode": "O1KP:AGE"
-            },
-            {
-              "type": "value",
-              "valueType": "NUMERIC",
-              "operator": ">=",
-              "value": 55
-            }
-          ]
-        },
-        {
-          "type": "study_name",
-          "studyId": "ORACLE_1000_PATIENT"
-        }
-      ]
-    }
-  }
-}
+% 8. /elements: param contraint: which concept // not sure of what the answer if for?
+% GET /v2/dimensions/trial\%20visit/elements
+% constraint:{"type":"concept","conceptCode":"O1KP:AGE"}
 
-{
-  "countsPerStudy": {
-    "ORACLE_1000_PATIENT": {
-      "O1KP:AGE": {
-        "observationCount": 100,
-        "patientCount": 100
-      },
-      "O1KP:CAT1": {
-        "observationCount": 100,
-        "patientCount": 100
-      },
-      "O1KP:CAT10": {
-        "observationCount": 100,
-        "patientCount": 100
-      },
-      ......
-    }
-  }
-}
+% {
+%   "elements": 
+%   [
+%     {
+%       "id": -101,
+%       "relTimeLabel": "General",
+%       "relTimeUnit": null,
+%       "relTime": null
+%     }
+%   ]
+% }
+
+
+% starting here possible to change constraints \& concepts in UI, then click on update counts:
+% 9. /counts\_per\_study\_and\_concept: update the counts according to the selected concepts-> return all relevant count (to update the tree) // constraint as param
+% POST /v2/observations/counts\_per\_study\_and\_concept
+% {
+%   "constraint": {
+%     "type": "subselection",
+%     "dimension": "patient",
+%     "constraint": {
+%       "type": "and",
+%       "args": [
+%         {
+%           "type": "and",
+%           "args": [
+%             {
+%               "type": "concept",
+%               "conceptCode": "O1KP:AGE"
+%             },
+%             {
+%               "type": "value",
+%               "valueType": "NUMERIC",
+%               "operator": ">=",
+%               "value": 55
+%             }
+%           ]
+%         },
+%         {
+%           "type": "study_name",
+%           "studyId": "ORACLE_1000_PATIENT"
+%         }
+%       ]
+%     }
+%   }
+% }
+
+% {
+%   "countsPerStudy": {
+%     "ORACLE_1000_PATIENT": {
+%       "O1KP:AGE": {
+%         "observationCount": 100,
+%         "patientCount": 100
+%       },
+%       "O1KP:CAT1": {
+%         "observationCount": 100,
+%         "patientCount": 100
+%       },
+%       "O1KP:CAT10": {
+%         "observationCount": 100,
+%         "patientCount": 100
+%       },
+%       ......
+%     }
+%   }
+% }
 
 
 
@@ -290,4 +290,86 @@ POST /v2/observations/counts\_per\_study\_and\_concept
 % GET /resultService/result/ID/format?download=yes
 % download can be put to no (content type will change, set yes for download from browser with clickable link)
 
+% \begin{verbatim}
+% GET /resourceService/resources
+% \end{verbatim}
+
+% Response:
+% \begin{verbatim}
+% [
+%   {
+%     "id": 1,
+%     "name": "resource name (e.g. i2b2-local)",
+%     "implementation": "resource type (which implementation is used, e.g. i2b2XML)",
+%     "relationships": [ supported relationships between tree nodes, e.g. CHILD ],
+%     "logicaloperators": [ "AND", "OR", "NOT" ],
+%     "predicates": [ supported predicates and their properties, e.g.: {
+%         "predicateName": "predicate name (e.g. CONTAINS)",
+%         "displayName": "displayed name (e.g. Contains)",
+%         "description": "description",
+%         "default": true if this predicate should be selected by default,
+%         "fields": [ {
+%             "name": "field name (e.g. By Encounter)",
+%             "path": "field code (to be used in query, e.g. ENCOUNTER)",
+%             "description": "By Encounter",
+%             "required": true,
+%             "dataTypes": [ data type of the value field(s) of this predicate ],
+%             "permittedValues": [ permitted values, if it categorical ]
+%           } ],
+%         "dataTypes": [ data types to which this predicate applies (e.g. STRING) ],
+%         "paths": [ paths to which this predicate applies (empty for all) ]
+%       } ],
+%     "selectOperations": [ supported operations for select (e.g. AGGREGATE) ],
+%     "selectFields": [ supported fields for the operations, e.g. COUNT for AGGREGATE ],
+%     "joins": [ ],
+%     "sorts": [ ],
+%     "processes": [ ],
+%     "visualization": [ ],
+%     "dataTypes": [ data types and their properties, e.g.: {
+%         "name": "name of the data type",
+%         "pattern": "regex to validate the value",
+%         "description": "description of the data type"
+%     } ]
+%   },
+%   ...
+% ]
+% \end{verbatim}
+
+
+% The API request becomes:
+% \begin{verbatim}
+% GET /resourceService/path/<resource>/<path>/?relationship=<relationship>
+% \end{verbatim}
+
+% Response:
+% \begin{verbatim}
+% [
+%   {
+%     "pui": "/<resource>/<path>/",
+%     "name": "Concept internal name",
+%     "displayName": "Concept name",
+%     "description": "Concept description",
+%     "ontology": "Ontology Code",
+%     "ontologyId": "Concept ID in the ontology",
+%     "relationships": [ supported relationships ],
+%     "counts": {},
+%     "dataType": {
+%       "name": "Data type name",
+%       "pattern": "Validation Regex",
+%       "description": "Data type description"
+%     },
+%     "attributes": {
+%       "visualattributes": "Visual attributes",
+%       "customAttributeName": "customAttributeValue"
+%     }
+%   },
+%   ...
+% ]
+% \end{verbatim}
+
+
 \section{i2b2 API}
+
+
+
+% todo: JWT example + say that when exchanged they are always base64 encoded

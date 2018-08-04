@@ -1,7 +1,25 @@
+% todo: have disambiguation if needed
+% vocabulary
+% query terms: concepts (i2b2) / constraints (more than that)
+% query: constraint
+
+
 \chapter{Introduction}
 % a summary of the introduction chapter
+% todo: do not number any section and chapter here?
+
+\begin{itemize}
+    \item motivation exposes problems
+    \item problems to be solved lead to objectives
+    \item objectives translated into technical requirements
+    \item technical requirements met with architecture solution
+    \item solution designed and implemented
+    \item evaluation of how implementation meet requirements
+\end{itemize}
 
 \section{Problem Statement}
+\label{sec:problem}
+
 \subsection*{Motivation}
 
 \begin{itemize}
@@ -42,11 +60,47 @@
     \item  patients reluctant to share their data
 \end{itemize}
 
+% todo: emphasize, bold or italic, the objectives
+2 obj that stem from Enable scientists to access more data from a common interface by...
+\begin{itemize}
+    \item common system to unify different system, have a common one
+    \item accessing sensitive data that would otherwise not be shared
+\end{itemize}
+
+
+\section{Solution Requirements}
+\label{sec:requirements}
+
+% requirements list
+We translate the objectives stated in~\ref{sec:problem} into the following requirements.
+Our solution must:
+
+\begin{enumerate}
+    \item be compatible with the major open-source clinical research systems % todo: and do what exactly? cohort exploraiton blabla, goal is not just to be compatible
+    \item enable sharing of sensitive data in a privacy-preserving way
+    \item be free of technical constraint against its use, by:
+    \begin{enumerate}
+        \item being easy to deploy, even in existing environments
+        \item not degrading the experience of existing systems
+        \item being secure
+        \item being open-source
+        \item having a practical runtime
+        \item being future-proof
+    \end{enumerate}
+\end{enumerate}
+
+% why requirements are fulfilling objectives
+
+% reasons for open-source:
+% In the open-source spirit, existing technologies and standard. Maximizing the value of the work. 
+% Integrating with existing systems.
+
 
 \section{Solution Overview}
 
 \begin{itemize}
     \item big picture of the whole system in short
+    \item how it helps solve the 2 objectives in short
 \end{itemize}
 
 
@@ -54,10 +108,11 @@
 
 \begin{itemize}
     \item list of contributions made
-    \item Evidence of successful solution (eg evaluation results)
+    \item evaluation shows how the contributions are successful
 \end{itemize}
 
 % - what we do is a step in the direction of blabla
+% convergence of blabla
 
 \section{Outline}
 TBD

@@ -1,0 +1,77 @@
+\section{API Translation}
+% Because of the fundamental differences in the APIs, it is not possible to browse and query several resources at the same time, we thus restrict the scope to using one system at the time, while having compatibility with different ones.
+
+% After being logged in, the user is able to choose from which resource do the queries.
+% A resource is defined as an instance of one the supported systems.
+
+% todo: irct publication?
+% second element in path is project id
+
+\begin{itemize}
+    \item tree browsing
+    \item translation to i2b2 format
+    \item enhancements made in IRCT: get aggregate values, data types, ?
+\end{itemize}
+
+% % baseline
+% IRCT communicates with all of the supported back end systems using their native APIs.
+% The compatible resources expose their tree of concept of concepts, which contain the information on how to construct queries.
+% They support the following basic query types, based on a specific set of constraints:
+% \begin{itemize}
+%     \item Count queries: number of matching patients
+%     \item Patient set queries: identifiers on matching patients
+%     \item Data queries: any kind of medical data about the matching patients
+% \end{itemize}
+
+% The constraints used can be:
+% \begin{itemize}
+%     \item Concept constraints: presence of a specific ontology item for a patient
+%     \item Value constraints: some numeric, text or date value satisfying some constraints
+% \end{itemize}
+
+% % additional features
+% Some features specific to some back end systems are supported only when using this system.
+% This is the case for systems implementing the tranSMART API v2:
+% \begin{itemize}
+%     \item Constraints based on studies / clinical trials
+%     \item Constraints based on pedigree / relation type
+% \end{itemize}
+
+
+% Actions of irct on external defined by set of definitions (list: predicates supported, things executed on resources), resources declare what they support
+% Interface (RI) execute the action with the resource interface in the native protocol, result is returned as irct result
+
+% Architecture: 4 layers (the components): put diagram
+% Authentication done by irct (with external auth provider it seems?) - irct has set of credentials to talk to the resources 
+% It uses JWT for authentication -> not sure how this works
+% Jwt token is signed using the secret configured // https://auth0.com/docs/tokens/access-token
+% Openid connect // for tests:https://openidconnect.net/
+% ---
+% , using maven/java
+% War deployed in wildfly or similar
+% Hibernate for auto-gen of db (postgresql seems to work, event if a ext thing is compatible only with oracle: hmlsssynonyms)
+% Sql files are provided to fill db (not tested yet)
+% Configuration: should be guessed (wildfly can’t deploy without it)
+%Redirect_on_success: url to redirect after login
+%Client_secret: shared secret with auth provider
+%Userfield: user id field name in resp. From auth provider
+%Client_id: client id when talking to auth provider?
+%Domain: domain of auth provider?
+%Keyoutinmuntes: time out of key (120 mins default)
+
+% § set up of the thing: compiling from sources etc. packaged with docker (links to that)
+
+IRCT modificaitons
+% CORS implementation
+% postgresql + hibernate: naming strategy
+% function postgresql pgsql for resources
+
+% should this be included??? we want front-end and middle layer, let's see at the end
+\section{Clinical Research Systems Processing}
+% i2b2 - transmart how they work are explained in background
+% what is the relevant part here? should they be treated as blackbox in term of query processing? this chapter is about an interoperability layer
+
+\begin{itemize}
+    \item i2b2 processing (star schema)
+    \item transmart processing (extended star schema)
+\end{itemize}
