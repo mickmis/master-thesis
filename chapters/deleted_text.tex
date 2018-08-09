@@ -470,3 +470,43 @@ The nesting of queries described section~\ref{sec:gb-logical-operators} is imple
 %todo: \paragraph{tranSMART 16.2} it is not tranSMART 16.2 :( but i2b2 transmart
 
 % ------------------------------------------------------------------------------------------------------
+
+We make the i2b2 resource declare the following \emph{select} operations:
+\begin{itemize}
+    \item \verb|AGGREGATE|, fields:
+    \begin{itemize}
+        \item \verb|FUNCTION|, mandatory, possible values:
+        \verb|COUNT|
+        
+        \item \verb|DIMENSION|, optional, possible values:
+        \verb|observation|,
+        \verb|patient|
+    \end{itemize}
+    
+    \item \verb|EXPORT|, fields:
+    \begin{itemize}
+        \item \verb|SUPPORTED_FORMATS|: possible values: \verb|file| %, \verb|data|
+        \item \verb|file|: value among the ones returns with \verb|SUPPORTED_FORMAT|
+    \end{itemize}
+    
+    \item (without predicate): select data to export
+\end{itemize}
+
+And the following \emph{where} predicates:
+\begin{itemize}
+    \item \verb|CONSTRAIN_CONCEPT|, constraint based on a concept, field:
+    \verb|OPERATOR|, optional, possible values:
+    \begin{itemize}
+        \item numeric values: \verb|==|, \verb|<=|, \verb|>=|, \verb|<|, \verb|>|
+        \item string values: \verb|LIKE[exact]|, \verb|LIKE[begin]|, \verb|LIKE[end]|, \verb|LIKE[contains]|
+    \end{itemize}
+    
+    \item \verb|CONSTRAINT_PATIENT_SET|, constraint based on a patient set, fields:
+    \begin{itemize}
+        \item \verb|PATIENT_SET_ID|: identifier of a patient set stored in the back end
+        \item \verb|PATIENT_IDS|: array of patient identifiers
+    \end{itemize}
+\end{itemize}
+
+
+% ------------------------------------------------------------------------------------------------------

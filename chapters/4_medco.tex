@@ -1,21 +1,57 @@
 \chapter{Privacy-Preserving Cohort Exploration}
-% to be merged: together into an high-level implementation
-% \section{Design}
-% \section{Implementation}
+\label{sec:medco}
+
+
 % thesis: medco subject to previous work of author, modified as such... (check out paper for more info)
 
+% intro
+% We adapt and integrate a privacy-pres
+% Building on top of the interoperability layer described in the last section, we achieve in this section the ability to do cohort exploration with our system in a privacy-preserving way.
+
+% explain what is medco, several nodes, etc.
 \section{Detailed Workflow}
 
+We show here the detailed workflow of our system when using MedCo.
+The first two step \ref{enum:wf-interop-login} and \ref{enum:wf-interop-login} from the interoperability layer (section~\ref{sec:interoplayer-wf}) are the same, and the following differs:
+
+\begin{enumerate}
+\item \textbf{User Login}:
+T
+
+\end{enumerate}
+
+% todo: put medco more detailed diagram
+
 \begin{itemize}
-    \item medco workflow in steps using glowing bear / pic-sure and no shrine
+\item \textbf{Query Construction}:
+The user browses the tree of query terms and uses them to construct a query corresponding to a patient set.
+When adding a term into the query panel, Glowing Bear might, according to its type, make a background request to fetch the term metadata, which is the case for example for categorical or numerical terms.
+The user then optionally sets value(s) to the query term.
+
 \end{itemize}
 
+mention about edco resource ahs to be implemented: in two parts mainly: tree and querhy
+
+result is same as i2b2
+tree is same as i2b2 almost / converter for types added
+
+medco builds on i2b2, as a cell in hive 
+
+uses i2b2 api with some fine tuning 
+(result in json show it 
+encrypted key show it
+
+medco cell processing show it : encrypted -> tagged)
+
 \section{Glowing Bear Query Construction}
+say it is inherated from i2b2 / 
+data types new
+% assumptions made:
+% - ontologies match exactly
+% - authentication: user exists in the 3 pms?
 
-assumptions made:
-- ontologies match exactly
-- authentication: user exists in the 3 pms?
 
+% for implementation of medco res. interface / extends though
 
 \begin{itemize}
     \item tree browsing, number to encrypt in the tree
@@ -24,14 +60,51 @@ assumptions made:
     \item format of encrypted terms
 \end{itemize}
 
-% gen temporary priv / pub pair of keys for user
+% gen temporary priv / pub pair of keys for user, in impl: hardcoded
 % encrypt with group.toml file from config the values to be sent
 % decrypt w/ priv key the results
 
+\subsection*{Implementation}
+
+- npm package
+- key gen
+
+
 \section{IRCT Query Broadcast}
-\begin{itemize}
-    \item threads run queries against medco nodes using i2b2 api
-\end{itemize}
+
+% intro
+After Glowing has submitted to IRCT the query through the PIC-SURE API, IRCT invokes the MedCo data source implementation to run the query with the MedCo nodes.
+Running the query with the MedCo nodes uses the i2b2 XML API, but do not reuse the i2b2 data source implementation like with the tree browsing, due to fundamental differences in how the query is executed.
+
+% threading
+The process to generate the query in the i2b2 XML API format is the same as i2b2, described section~\ref{sec:interop-layer-query-translation}, even though the paths of the queried items are encrypted values.
+However the submission of the query to i2b2 is different, as the query has to be submitted to all the MedCo nodes simultaneously.
+This is needed as the MedCo nodes later need to synchronize between to perform some collective cryptographic operations.
+
+
+% medco resource, where? should be before
+
+\subsection*{Implementation}
+
+% threading
+We implement the part of the PIC-SURE data source implementation for MedCo that handles the querying of the data source.
+To implement the simultaneous querying of the MedCo nodes, we use as many threads as there are nodes and execute them at the same time. 
+We use a \emph{count down latch} to synchronize the threads together and wait on their completion.
+After a set amount of time without answer from the MedCo nodes, they timeout.
+
+% shrine drop
+The query is submitted directly to the MedCo nodes. 
+This is different from the original MedCo behavior that relies on SHRINE~\cite{todo} to do so.
+In this previous implementation, the query was submitted to a single SHRINE node, and only after the query was broadcasted to the MedCo nodes.
+Here this broadcaster role is taken by the PIC-SURE data source implementation of MedCo.
+The reasoning bypassing SHRINE is that it is a multi-components software, that is complicated to set up and deploy, and is expensive to maintain.
+Moreover it was not bringing a significant added value to MedCo.
+
+% ontology
+Doing so, we lose a feature offered by SHRINE, which is the ontology translation that SHRINE operates, between a common network ontology and a local i2b2 ontology.
+This is not a big problem, as anyway the mapping between the network and common ontology needed to be made and maintain manually in SHRINE.
+Also this feature is not used in MedCo for the encrypted terms.
+It implies though that the ontologies between the different MedCo nodes have to be maintained identical, at least for the ontologies meant to be queried through MedCo.
 
 \section{MedCo Query Processing}
 \begin{itemize}
@@ -39,11 +112,47 @@ assumptions made:
     \item modifications made: shrine drop, ?
 \end{itemize}
 
+secure shuffle with aaaaaaa
+
 % each ontologiy at each site has 2 ontologies, clear and not clear, explorable by client or not 
-% schemas "medconotology" " i2b2metadata_i2b2"
+% schemas "medcon otology" " i2b2metadata_i2b2"
+
+
+% no repeat of what medco process is doing and already described in paper, cite it in detail though
+
 
 \section{Glowing Bear Result Processing}
-\begin{itemize}
-    \item format of result
-    \item decryption and display
-\end{itemize}
+
+% intro
+Following the same process as i2b2 described in section~\ref{sec:interoplayer-gb-results}, the results of the query are retrieved from IRCT.
+The difference here is in the format of the results, as they are encrypted with the public key $P_k$ sent along the query.
+
+% result format
+There is one result per MedCo nodes.
+According to access level of the user, it is possible to identify which result is coming from which node, or the result were securely shuffled between the nodes.
+The format of the result is a JSON string with the following format:
+
+\begin{verbatim}
+{
+    "pub_key": "<public key used>",
+    "enc_count_result": "<result encrypted with public key>",
+    "times": {
+        <breakdown of time measurements>
+    }
+}    
+\end{verbatim}
+
+% decryption
+All the encrypted results are then decrypted using the secret private key $p_k$, summed together, and displayed to the user using the same process as for i2b2.
+Additional information, containing the more detailed breakdown of results per node, is also displayed.
+
+
+\subsection*{Implementation}
+
+% decryption
+A modification is made in the Glowing Bear PIC-SURE results processing to identify correctly when encrypted results are fetched, and extract them.
+Decryption of the results are made using the cryptography library previously described, and the private key corresponding to the public key used.
+
+% breakdown component
+A new module is implemented in order to display the detailed breakdown of the MedCo query.
+It appears as a tab when Glowing Bear detects the presence of MedCo results, and displays the count breakdowns and times measurements from the nodes.

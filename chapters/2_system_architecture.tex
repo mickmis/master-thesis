@@ -1,250 +1,206 @@
 \chapter{System Architecture}
 \label{sec:sysarchitecture}
 
-To design a system fulfilling the requirements listed in \ref{sec:requirements}, we start by the bottom with first choosing its basic building blocks, and then we explore the different ways in which they can be assembled.
-Following the requirements, we only consider open-source technologies.
+To design a system fulfilling the requirements listed in \ref{sec:requirements}, we start from the bottom by first choosing its basic building blocks, and then we explore the different ways in which they can be assembled.
+Finally we show an overview of the final system.
+By the requirements, we only consider open-source technologies.
 
 
 \section{Choice of Open-Source Technologies}
 
 % outline
-The choice of the open-source technologies to use depends mainly on the clinical research platforms that must be supported, which will be our first step in this section.
-We then do a review of the different existing open-source front end systems to determine if one of them is worth being used for our solution.
-Finally we motivate the use of an identity provider software and choose one.
+The choice of the open-source technologies to use depends mainly on the clinical research platforms that we aim to support.
+First we review those platforms, then we explore existing open-source front end systems in hope of determining if one of them is worth being used for our solution.
+Finally we motivate the delegation of identity and access management to an identity provider, and choose a software that implements it.
 
 \subsection{Back End Systems: Clinical Research Platforms}
 
-% what is a clinical research platform / use-case
-A clinical research platform is a back end software (i.e. running on server, serving request to clients), that stores any kind of medical data and can answer queries, with the purpose of identifying patient cohorts, and possibly performing analytics on those data.
-Queries on this data can be for any purpose, here follows a few use-cases of this kind of platform.
-A medical researcher want to recruit a patient cohort for a study they want to conduct. They need to select patients with a te
-pharma testing drugs study
-ongologist for persolized medicine: looks for response to treatment of patient according to genes.
+% what is a clinical research platform
+A clinical research platform is a back end software (i.e. running on server, serving request to clients), that stores any kind of medical data and can answer queries, with the purpose of identifying patient cohorts, and possibly performing analysis on those data.
 
-% Altogether these systems serve an enormous of data, and being able to access them from a unique front end would prove much beneficial to researchers.
-
-% As stated section~\ref{sec:requirements}, we target compatibility with the main open-source clinical research platforms. 
-% In that area the two main players are \emph{i2b2} and \emph{tranSMART}.
-% Less widespread, and building on \emph{i2b2}, also exists \emph{SHRINE} and \emph{MedCo}.
-
-% § about i2b2: why support it
-
-% § about tranSMART: why support it 
-
-% § about MedCo: why support it
-
-
-% what exist there, which one we are targetting the compatibility for and why // descriptive part in related work / background
-
-
-
+% use-case 
+Queries on this data can be for any purpose, here follows two example use-cases for this kind of platform.
 \begin{itemize}
-    \item why using IRCT and not i2b2 directly from GB
-    \item why not technologies from related work
+    \item An oncologist at an hospital tries to identify response to specific medications according to criterion such as the presence of some alleles in the genome of the patients.
+    \item A pharmaceutical company wishes to conduct a study on a new medication, and needs to recruit a cohort of young patients that had a specific diagnoses at some point in time.
 \end{itemize}
 
+% use-case: technical
+We cover in this document the basic technical requirement of these use-cases: obtaining patient counts based on inclusion and exclusion criterion.
+Of course more processing can be done, such as statistical analysis, but this is not the focus here.
 
-% need for transmart and i2b2 because major technologies
-% compatible front-end
+% i2b2 / transmart: they do the above, and allow this use-case, star schema
+The two main players in terms of open source clinical research platforms are \emph{i2b2}~\cite{todo} and \emph{tranSMART}~\cite{todo}.
+They enable the use-cases presented before by leveraging on an almost identical database schema: the star schema. 
+This schema has a central table containing \emph{observation facts}, and several dimension tables: \emph{patient}, \emph{visit}, \emph{concept} and \emph{modifier}.
+And specifically for tranSMART: \emph{study} and \emph{trial visit}.
+An observation is a dated record of an event that refers to entries in the aforementioned dimensions.
+We choose to support these two platforms, in their latest version at the time of the project, as together they host an enormous amount of data hosted by hospitals, research institutes or pharmaceutical companies.
 
-% need for front and back end
-% need for http
-
+% medco
+MedCo~\cite{todo} is a privacy-preserving clinical research platform, and at the time of the project the only one that offers privacy-preserving guarantees.
+It enables the sharing of sensitive medical data within a federated group of clinical sites in a privacy-preserving way by using homomorphic encryption and obfuscation techniques.
+MedCo fits our requirements and use-cases as it is open-source, based on i2b2, and allow count queries based on inclusion and exclusion criterion, with end-to-end encryption.
 
 
 \subsection{Front End System: Cohort Explorers}
-% front end: need for web solution, better flexibilty, use of the apis, better separation of concerns
 
-% present i2b2 and transmartapp, and eliminate them
-Each of the previously retained platforms have their official front end: the \emph{i2b2 webclient} for i2b2, and {tranSMARTApp} for tranSMART.
-One option for choosing our front end would be to choose one of those, and implement whatever we additionally there.
+% requirements for front end
+To build our front end we have several systems on which we could base our solution on.
+We require it to be modern, open-source, web-based for portability, and if possible at least partially compatible with the clinical research platforms we support.
+If all those requirements can not be met, there is left the option of building the front-end from scratch, but as seen in this section we manage avoid this significant effort.
 
-% do no retain them
-However they both suffer from two major problems:
-\begin{enumerate*}
-    \item they use outdated technologies;
-    \item they are very tightly linked to their back end.
-\end{enumerate*}
-The \emph{i2b2 webclient} uses \emph{yui}~\cite{todo}, a javascript framework developed by Yahoo, and not supported anymore since 2014. 
-\emph{tranSMARTApp} is a web application rendered on the server-side, alongside tranSMART, and not a pure web client.
-
-% introduce gb
-\emph{Glowing Bear} 
-modern
-agnostic
-
-
-% cohort exploration: § what's available (compatible with previously selected systems)
+% list of candidates
+The result of a review of available open-source front-end for cohort exploration who deserve to be investigated follows:
 \begin{itemize}
-    \item GB
-    \item i2b2 webclient: outdated technologies
-    \item i2b2 workbench: heavy client, not portable enough
-    \item transmartApp 
-    \item from sratch
-    \item borderline ui
+    \item i2b2 webclient~\cite{todo}
+    \item i2b2 workbench~\cite{todo}
+    \item transmartApp~\cite{todo}
+    \item Borderline UI~\cite{todo}
+    \item Glowing Bear~\cite{todo}
 \end{itemize}
 
-% candidates from transmart: https://wiki.transmartfoundation.org/display/transmartwiki/User+interfaces
+% i2b2 webclient / workbench and transmartapp
+Each of the previously retained platforms have their official web front end: the \emph{i2b2 webclient} for i2b2, and \emph{tranSMARTApp} for tranSMART.
+Both of them are perfectly compatible with their respective back ends, however they suffer from two major problems:
+\begin{enumerate*}
+    \item they use old or outdated technologies, making future development and maintenance more difficult;
+    \item they are very tightly linked to their back end, making the development of support for the other difficult.
+\end{enumerate*}
+The \emph{i2b2 webclient} uses \emph{yui}~\cite{todo}, a javascript framework developed by Yahoo, and not supported anymore since 2014. 
+\emph{tranSMARTApp} is a web application rendered on the server-side in Java, alongside tranSMART, and not a pure web client.
+For those reasons we choose to not retain those solutions.
+We can also mention the \emph{i2b2 workbench}, client desktop application for i2b2, but as it is not web-based we discard it as well
 
-% § Why GB 
-% already compatible with 17.1
+% borderline
+\emph{Borderline} is a set of components implemented in Javascript, including a user interface, that allows to create and execute queries against clinical research platforms.
+Compared to the others, it is a more serious candidate. It is web-based, modern and supports tranSMART, with plans to support i2b2 as well.
+However it is at the time of this project in a work-in-progress state, under heavy development, thus not yet stable.
+Additionally it does not support API translation, only some kind of API proxying.
+For those reason we choose not to retain this solution.
 
-% § what does gb need to work (what is it using from the transmart rest api?)
+% introduce gb yep
+\emph{Glowing Bear} is the front end system we choose to retain.
+It is modern, web-based and mature software. 
+It is implemented on top of tranSMART (v17.1) but its source is structured generically, facilitating the implementation of support for other platforms.
+It thus fits all of our requirements for a front end.
 
-% summary
-%--> should conclude with what front end we want to use : GB
-%need for not changing current user experience for clients
 
 \subsection{Identity Provider}
 
 Such a system with different components calls for a common and standardized way of handling authentication and authorization.
+The de-facto modern standard for this is the OpenID Connect protocol~\cite{todo} (OIDC), which we are using in our solution.
+OIDC allows to externalize in a secure way authentication and authorization in a multi-components system.
+A stable, mature and open-source implementation of OIDC is the server software Keycloak~\cite{todo}, that we choose to use.
 
 
-why: can be externalized, uses standard, flexilibity, integrate with existing
+\section{Building the System Architecture}
 
+\subsection{Assembling the Building Blocks}
 
-\section{System Architecture Scenarios}
-
+% intro
 Now that we have the basic building blocks of our solution, we design a system where they fit together in a coherent way.
-
-
+The architecture can roughly be categorized in three zones:
 \begin{itemize}
-    \item we have the building blocks: how to assemble them
+    \item Front end
+    \item Interoperability layer
+    \item Clinical research platforms
 \end{itemize}
+Our building blocks lies in the front end and clinical research platforms zones. 
+We now are designing the interoperability layer that connects those two zones.
 
-% Now that we chose the fundamental open-source building blocks of our solution, we must fit them together.
-% We have two natural approaches to do so: with or without a middle component.
+% assembling
+This interoperability layer can be implemented in the front end, in the back end or in both.
+Because the front end Glowing Bear implements the compatibility with tranSMART, we could imagine that implementing the interoperability layer into Glowing Bear by adding the support for i2b2 and MedCo, using the i2b2 XML API, alongside tranSMART.
 
-% there are two main approaches we can use to assemble them together.
+% front end
+However for two reasons we want to avoid a fully front end i2b2 API implementation: 
+\begin{enumerate*}
+    \item the i2b2 XML API is old and cluttered, which means difficult to implement and maintain;
+    \item by only implementing the support for specific systems, this would not leave much space for extensibility.
+\end{enumerate*}
 
-
-% Assembling these tools together can take several roads, present them here.
-% weigh the procs and cons
-% 2 main models: with or wihtout a backend component
-% w/ backend component: can use IRCT as the backend
-% Alternative models? (OLAP/MDX investigations? To be discussed)
-% The final decision
-
-% --> should conclude that we want the scenario 2, i.e. with a backend, but supporting transmart through glowing bear
-
-
-% then paragraph to introduce the use of pic sure, which is an optional implementation option, but needs investigations -> next section
-
-% backend scenario> either implement or use sth existing
-
-% 2 transversal questions to answer: 
-% - impl. in front or back end
-% - using pic-sure or not 
-
-\subsection{Localization of the Interoperability Layer}
-
-
-% % why no transmart rest v2
-% Compatibility with tranSMART versions 17.1+ is later restored through the implementation of an IRCT resource interface (see~\ref{sec:irct-res-transmart-17.1}).
-% The reasoning behind this choice is that maintaining compatibility of two different but similar APIs in Glowing Bear would be possible, but complicated, which translates into additional efforts spent on the implementation, and later on the maintenance of the code: this would be sub-optimal as these efforts are better spent elsewhere.
-% The potential downside of this choice is a time delay for the requests as we are introducing an additional middle-component, these are formally measured in a later chapter.%chapter~\ref{chap:perfeval}. % todo: ref
-
+% back end
+\begin{samepage}
+Second option is implementing the layer fully in the back end, which would mean that:
 \begin{itemize}
-    \item front-end or back-end
+    \item we need a back end component to take care of the APIs translation
+    \item the support of tranSMART in Glowing Bear would be removed and re-implemented in the back end component
 \end{itemize}
+While the first consequence is not a problem, the second implies pretty heavy additional work, with not much added value.
+\end{samepage}
 
 
-\subsection{Using the PIC-SURE API} no: using a pre-existing translation layer -> borderline, it is both UI and translation layer
+% we choose both
+For the reasons enumerated before, we choose in our system the hybrid approach: implementing the interoperability layer in both the front end and the back end.
+In the front end the support of tranSMART is kept, and we use a back end component to take care of the translation to the other clinical research platforms, i2b2 and MedCo, all the while having Glowing Bear communicating with this component with a unique API.
 
-BORDERLINE
-middleware api: abstract data sources
-server: make the queries?
-ui: ui...
+% pic-sure
+For this task the \emph{PIC-SURE} API~\cite{todo} is the perfect tool.
+It is a generic API that was designed to be translated to any kind of API used for querying medical data, and supports several systems, including i2b2.
+The back end component implementing the PIC-SURE API is \emph{IRCT} and is open-source.
+Thanks to its extensibility capabilities, we are using as well to implement support for MedCo.
+Support for the additional systems that IRCT is compatible with is left for future work.
 
-% todo: argue on why not implementing i2b2 directly in GB (maintainalitity, future proof, etc.)
+% ccl
+To summarize, our interoperability layer is composed of 
+\begin{enumerate}
+    \item an interoperability module in  Glowing Bear, which has support for both the tranSMART REST API v2, and PIC-SURE;
+    \item IRCT, which has support for i2b2 and MedCo.
+\end{enumerate} 
 
-\begin{itemize}
-    \item yes or no
-\end{itemize}
--> yes but not for transmart
-explain why by taking arguments from when planning switch was made
-
-% goal of investigations
-% Given the choice of the scenario that makes use of a backend, the option of using the IRCT as the backend for the system is to be evaluated.
-% On a first look it looks good 
-
-% % technical analysis
-% questions raised --> cf next §
-
-% % questions raised and answered
-% This first technical analysis raised some questions on IRCT, becasue we want the , we woul
-% Because using IRCT introduce a heavy dependency towards it for Glowing Bear, 
-
-
-% how it allows us to cover the requirements
-
-
-% Decision on implementation scenario \& technologies
-% Description of 2 scenarios
-% PIC-SURE API Investigations
-% Estimation of effort to integrate tranSMART 17.1: too much
-
-
-% PIC-SURE API Investigations
-% § what is being investigated, link to things explained before (why this is being investigated as potential solution)
-
-% analysis shoold be targeted: what is its goal? evaluate it meets the requirements of GB
-
-% § questions that came up (list): from analyse of what’s available online, interrogations came up, include also the answers (check out list of questions that was made)
-
-
-% --> should conclude here that we want to use pic sure
-
-
-\subsubsection*{tranSMART Support}
-\begin{itemize}
-    \item in GB or through PIC-SURE, since pic-sure chosen at that point
-\end{itemize}
-
-
-
-\section{System Design}
+% todo: mention borderline along pic-sure?
 
 \subsection{Technical Choices Summary}
 
 We summarize our technical choices:
 
 \begin{itemize}
-    \item Supported clinical research platforms: \emph{i2b2}, \emph{tranSMART 17.1}, \emph{MedCo}
+    \setlength\itemsep{0em}
+    \item Supported clinical research platforms: \emph{i2b2 1.7}, \emph{tranSMART 17.1}, \emph{MedCo}
     \item Interoperability layer for i2b2 and MedCo: \emph{IRCT} (PIC-SURE API)
-    \item User interface: \emph{Glowing Bear}
+    \item Front end with support for tranSMART REST API v2 and PIC-SURE: \emph{Glowing Bear}
 \end{itemize}
 
 
-\subsection{Technical Considerations}
+\begin{samepage}
+\subsubsection*{Technical Considerations}
 
-Additionally we take into consideration software engineering considerations, which allows us to solve or alleviate the technical constraints listed in the requirements.
-
-
-
-% practical runtime: , i.e. a negligible overhead when compared to the standalone systems
-% future-proof: , i.e. extensible, use of apis standard to easily integrate with others, modern tech
-%\item support all the features of GB-> not a requirement, consequence of choosing GB//however a list of the UI features we want to have should be present // i.e. not downgrading experience for existing users
-    
-% todo: if existing solutions are used: those are used by actual users and should not lose features, no change is desired from user p-o-v
-% seemingless integration with existing systems: use of apis standardized , promote reuse and integration
-
-
-% using web apis \ todo: elaborate rest, rephrase
-While these systems may differ, most of them can be queried through RESTful Web APIs.
-Web APIs allows to interact with systems in a platform and technology independent way, by using HTTP calls \cite{todo}.
-RESTful APIs are interfaces that enforce a certain set of constraint (see \cite{todo}) that when used are inducing a number of properties that make their use and programming easier.
-Using RESTful Web APIs contributes to make the system more open and extensible, thus helps meeting the requirements.
-
+Additionally we take into consideration some software engineering considerations, which allows us to meet or alleviate the technical constraints listed in the requirements.
+\begin{enumerate}
+    \item A practical query run time: the overhead of using our solution compared to the original clinical research platforms should be negligible.
+    \item Extensible: building support for additional systems should be made easy.
+    \item Preserve existing user experience: the existing technologies that are used should not be modified in a way that degrades existing features.
+    \item Using standards: use existing standard APIs and technologies to the best extent possible.
+    \item Quality: produce quality code to facilitate maintenance and encourage reuse
+\end{enumerate}
+\end{samepage}
 
 
 \subsection{System Overview}
-\begin{itemize}
-    \item graph overview
-\end{itemize}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/sys_diagram_full.pdf}
+    \caption{Full System Diagram}
+    \label{fig:sys-diagram-full}
+\end{figure}
 
+Figure~\ref{fig:sys-diagram-full} shows the architecture of our solution as described in this section.
+The high-level idea of the workflow is the following:
+\begin{enumerate}
+    \item \label{enum:wf-init} While loading Glowing Bear, the user logs in with Keycloak.
+    \item The user constructs a query, and Glowing Bear submits it through the appropriate channel:
+    \begin{enumerate}
+        \item \label{enum:wf-transmart} \emph{tranSMART}: from Glowing Bear, the query is immediately submitted to tranSMART.
+        \item \label{enum:wf-i2b2} \emph{i2b2}: from Glowing Bear, the query is submitted to IRCT using the PIC-SURE API, and IRCT submits to i2b2 the query
+        \item \label{enum:wf-medco} \emph{MedCo}: using the cryptographic module in Glowing Bear, the query is submitted to IRCT and then broadcasted to all of the MedCo nodes.
+    \end{enumerate}
+    \item \label{enum:wf-results} The result is fetched and displayed to the user in Glowing Bear. In the case of MedCo the cryptographic module is used to decrypt the result.
+\end{enumerate}
 
-\subsubsection*{Workflow}
-\begin{itemize}
-    \item high-level and summarized workflow of the system
-\end{itemize}
+The design of step~\ref{enum:wf-init} is covered in section~\ref{sec:interoplayer-idp}, 
+step~\ref{enum:wf-i2b2} in section~\ref{sec:interoplayer-gb} and~\ref{sec:interoplayer-picsure}, 
+step~\ref{enum:wf-medco} in section~\ref{sec:medco} and finally 
+step~\ref{enum:wf-results} in section~\ref{sec:interoplayer-gb}.
+Step~\ref{enum:wf-transmart} is not covered in this document as the support for tranSMART in Glowing Bear is preexisting.
+

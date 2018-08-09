@@ -1,10 +1,12 @@
 % todo: uniform vocab (concepts / entities) (backend / back end)
+% todo: numeric / numerical
 
 \chapter{Interoperability Layer for Clinical Research Systems}
 % implementation: what was already done -> refs, done by myself -> explain
 
 % intro
 Now that we have the architecture of our solution, this chapter covers the design and implementation of the first objective of our project: creating an interoperability layer for the clinical research systems i2b2 and tranSMART 17.1, that is exploitable by the front end Glowing Bear, and with the identity and access management handled by Keycloak.
+Support for MedCo is covered in the next section.
 
 % outline
 We are first going over the detail workflow of the system, showing the end-to-end processing of a query.
@@ -13,6 +15,7 @@ Appendix~\ref{sec:docker} covers exhaustively the technical details of the Docke
 
 
 \section{Detailed Workflow}
+\label{sec:interoplayer-wf}
 
 This section gives an overview of the full workflow of our system when constructing and executing a query.
 Some steps are specific to \textit{tranSMART} 17.1 or \textit{PIC-SURE}.
@@ -21,28 +24,28 @@ Some steps are specific to \textit{tranSMART} 17.1 or \textit{PIC-SURE}.
 % todo: screenshots when makes sense
 % todo: diagram wiht steps
 \begin{enumerate}
-\item \textbf{User Login}:
+\item \label{enum:wf-interop-login}\textbf{User Login}:
 The user accesses Glowing Bear through its web browser, which redirects it to the Keycloak login page.
-The user submits his credentials to Keycloak, which upon success redirects the user to Glowing Bear, giving at the same time the JWT.
+The user submits his credentials to Keycloak, which upon success redirects the user to Glowing Bear, giving at the same time the JSON Web Token (JWT)~\cite{todo}, containing authentication and authorization information.
 The user is thus logged in in the system.
 
-\item \textbf{Glowing Bear Initialization}:
+\item \label{enum:wf-interop-init} \textbf{Glowing Bear Initialization}:
 Glowing Bear reads from its configuration which type of back end it should use.
 The tree of query terms is loaded, either in its entirely (\textit{tranSMART}) or only the root nodes (\textit{PIC-SURE}).
 In the \textit{PIC-SURE} case, Glowing Bear fetches the definitions of the resources set up on IRCT.
 
 \item \textbf{Query Construction}:
 The user browses the tree of query terms and uses them to construct a query corresponding to a patient set.
-When adding a term into the query panel, Glowing Bear might according to the type of the term make a backgrund request to fetch the term metadata, which is the case for example for categorical or numerical terms.
+When adding a term into the query panel, Glowing Bear might, according to its type, make a background request to fetch the term metadata, which is the case for example for categorical or numerical terms.
 The user then optionally sets value(s) to the query term.
 
 \item \textbf{Query Submission}:
 Upon user request (or automatically according to the configuration), Glowing Bear submits the query to the back end.
 
-\item \textbf{Query Translation} \textit{PIC-SURE only}: IRCT uses the appropriate resource interface to perform the translation into the native i2b2 API of the query, and submit it to i2b2.
+\item \textbf{Query Translation} \textit{PIC-SURE only}: IRCT uses the appropriate resource interface to perform the translation into the native i2b2 API of the query, and submits it to i2b2.
 
-\item \textbf{Query Processing}: the query is submitted to the appropriate clinical research platform, either directly from Glowing Bear for tranSMART or through IRCT for i2b2.
-The query is processed, and the result is sent back to the requester.
+\item \textbf{Query Processing}: the submitted query, either directly from Glowing Bear for tranSMART or through IRCT for i2b2, is processed by the platform. 
+The result is sent back to the requester.
 
 \item \textbf{Result Storage} \textit{PIC-SURE only}: IRCT stores the result in its database, and sets the query as being successful.
 
@@ -53,6 +56,7 @@ Given the asynchronous nature of IRCT when processing queries, Glowing Bear peri
 
 
 \section{Identity and Access Management}
+\label{sec:interoplayer-idp}
 
 % outline
 This section first exposes how the authentication (identity) and authorization (access) are handled in our system with OpenID Connect and Keycloak, and then the steps taken to implement it the way it is.
@@ -67,7 +71,7 @@ Authentication management is about verifying the identity of the user trying to 
 With OpenID Connect, the authentication of the user is made by the identity provider, here Keycloak.
 Keycloak can authenticate users in a number of ways: classic credentials (user and password) stored in its database, against external directories like LDAP, delegating to external OAuth2 or OIDC providers, and more.
 Two-factors authentication using One-Time Password (OTP)~\cite{todo}, time (TOTP) or counter (HOTP) based, is also available.
-This configuration, which can be specific to clients, is left at the discretion of the administrator. 
+This configuration, which can be specific to the client systems, is the responsibiilty of the administrator. 
 
 % login process / authentication
 When loaded, Glowing Bear checks for the presence and validity of the JWT. 
@@ -85,11 +89,11 @@ In this redirection several parameters are passed:
 Once the authentication is successful, several behaviors (called flows) can happen between the authentication of the user and the verification of the token at the client system.
 We focus on the behavior we use, the \emph{authorization code} flow.
 Keycloak redirects the user back to Glowing Bear, giving the authorization code at the same time.
-With this authorization code, Glowing Bear requests to Keycloak in the background the tokens it needs:
+Glowing Bear then exchange this authorization code for the following tokens in the background:
 
 \begin{itemize}
-    \item an access token: this is the signed JWT that contains the identity and authorizations of the user. It is sent along with the HTTP requests made to the back end systems. An example of a JWT is provided in appendix~\ref{todo}.
-    \item a refresh token: when the access token expires, Glowing Bear uses the refresh token to request a new token. This can done in the background without user interaction as long as the login session with Keycloak is still valid.
+    \item an \emph{access token}: this is the signed JWT that contains the identity and authorizations of the user. It is sent along with the HTTP requests made to the back end systems. An example of a JWT is provided in appendix~\ref{sec:appendix-jwt}.
+    \item a \emph{refresh token}: when the access token expires, Glowing Bear uses the refresh token to request a new one. This can done in the background without user interaction as long as the login session with Keycloak is still valid.
 \end{itemize}
 
 % using the tokens from gb
@@ -102,7 +106,7 @@ It is done by adding the following HTTP header, which is specified by~\cite{todo
 % todo cite: http://openid.net/specs/openid-connect-implicit-1_0.html#AccessTokenValidation
 % validating tokens from the back end
 Validating an access token in the JWT format requires several checks, performed in the back end systems.
-The prerequisite to those checks is that the back end system should fetch from Keycloak its public signing keys, which are made available in the JWKS format (JSON Web Key Set)~\cite{todo}.
+The prerequisite to those checks is that the back end system should fetch from Keycloak its public signing keys, which are made available in the JSON Web Key Set format (JWKS)~\cite{todo}.
 The checks are:
 
 \begin{itemize}
@@ -113,7 +117,7 @@ The checks are:
     % todo cite: https://tools.ietf.org/html/rfc7515
 \end{itemize}
 
-Using this authentication mechanism, the back end systems have a stateless authentication that needs only the Keycloak signing keys, the client identifier and the self-contained token.
+Using this authentication mechanism, the back end systems have a stateless authentication that needs only Keycloak's URL, the client identifier and the token.
 
 % todo: flow diagram for auth, add the steps in text
 % \begin{figure}[ht]
@@ -128,9 +132,9 @@ Using this authentication mechanism, the back end systems have a stateless authe
 
 % overview
 Authorization management is about restricting access to data depending on the access level of the user.
-With OpenID Connect, the authorizations of an user are embedded as a \emph{claim} into the JWT by the identity provider.
+With OIDC, the authorizations of an user are embedded as a \emph{claim} into the JWT by the identity provider.
 While the authorizations are set at the identity provider, their enforcement are the responsibility of the client system, in this case tranSMART. 
-Note that i2b2 and IRCT do not use the authorization capabilities of OpenID Connect, only its authentication mechanism.
+Note that i2b2 and IRCT do not use the authorization capabilities of OIDC, only its authentication mechanism.
 
 % authorization encoding
 The standard does not specify a format for encoding authorizations, it is left at the client system discretion.
@@ -158,7 +162,7 @@ It intercepts all the requests made by Glowing Bear, examines it, and add in the
 % RS256 implementation
 In its original implementation IRCT supports only JWT with a \verb|HS256| signature, i.e. a shared-secret based signature. 
 Because Keycloak does not support this type of signature, and because the standard recommends to use \verb|RS256| signature~\cite{todo}, we modify the IRCT implementation to do so. 
-The support of \verb|HS256| signatures is removed and replaced by \verb|RS256|, which instead of the shared secret needs as input the public signing keys of Keycloak.
+The support of \verb|RS256| signatures is added alongside \verb|HS256|, which instead of the shared secret needs as input the public signing keys of Keycloak.
 The retrieval of those in the JWKS format is thus implemented, from an URL specified in the configuration.
 The verification of the token is voluntarily incomplete: checking for the issuer and the client identifier is left as the responsibility of the back end system queried by IRCT.
 
@@ -166,9 +170,9 @@ The verification of the token is voluntarily incomplete: checking for the issuer
 
 % oidc compat and parameters i2b2
 i2b2 initially supports authentication with its own user management mechanism or through LDAP or NTLM directories.
-We take advantage of the i2b2 Project Management cell ability to specify in the database the authentication mechanism to add the OpenID Connect implementation.
+We take advantage of the i2b2 Project Management (PM) cell ability to specify in the database the authentication mechanism to add the OpenID Connect implementation.
 This allows users authenticated with OIDC to cohabit with users authenticated with the traditional i2b2 way.
-This is done through the i2b2 PM parameters (as specified section~\ref{sec:bg-i2b2}, which can be applied either at user, cell or project level. 
+This is done through the i2b2 PM parameters (as specified section~\ref{sec:bg-i2b2}), which can be applied either at user, cell or project level. 
 They are the following:
 
 \begin{itemize}
@@ -182,6 +186,33 @@ This last field is needed in order to be sure that the user account in the i2b2 
 Because there is no such thing as a standard username field, it needs to be specified by the configuration.
 
 % how token is sent
-The token is passed through the \verb|password| field of the i2b2 XML API.
+The token is passed through the \verb|password| field of the i2b2 XML API (see appendix~\ref{sec:appendix-i2b2}).
 This approach is not among the recommended ones, but it does not go against the OpenID Connect standard, and it simplifies greatly the implementation.
 
+
+% todo ------- merge this:
+% \subsection{Identity and Access Management}
+% THIS IS FOR 3.1
+
+% % auth with IRCT
+% All requests made to IRCT with the PIC-SURE API must be authenticated with a JWT as explained section 
+
+
+% % auth with data sources
+% Because IRCT communicates with i2b2, it has to somehow be authenticated with it.
+% We support two ways of doing so:
+% \begin{itemize}
+%     \item IRCT requests are authenticated against i2b2 as being the IRCT system
+%     \item IRCT requests are authenticated as being from the requesting user in the client system
+% \end{itemize}
+% The first implies that IRCT must have a fixed set of credentials to authenticate against i2b2.
+% This poses some obvious security problems, as this means that all users using the PIC-SURE API must have the same level of access.
+% The second one, which we use in our solution, makes use of the user's JWT, 
+% access mgmt / authorization handled by the data source, user must exisgt in data source
+
+% matching users
+
+% \subsubsection*{Implementation}
+% - cors
+% - token change type -> prev sec
+% - i2b2 auth -> prev sec

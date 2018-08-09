@@ -1,77 +1,202 @@
-\section{API Translation}
-% Because of the fundamental differences in the APIs, it is not possible to browse and query several resources at the same time, we thus restrict the scope to using one system at the time, while having compatibility with different ones.
 
-% After being logged in, the user is able to choose from which resource do the queries.
-% A resource is defined as an instance of one the supported systems.
+% todo: mention the i2b2 process and all from paper
 
-% todo: irct publication?
-% second element in path is project id
+\section{PIC-SURE to i2b2 API Translation}
+\label{sec:interoplayer-picsure}
 
+% intro
+On the back end side, to provide an interoperability layer with i2b2 and later more systems, we use IRCT~\cite{todo} (Inter-Resource Communication Tool).
+IRCT implements the PIC-SURE API, which is used by Glowing Bear.
+Behind that it can support a multitude of systems, but we focus here on the support of i2b2.
+
+% overview
+This section covers the process of API translation happening in IRCT, from the PIC-SURE API to the i2b2 API.
+We go over the full query process: browsing through query terms, executing a query and getting back its results.
+
+
+\subsection{Query Terms Tree}
+
+\subsubsection{Tree Structure and Nodes Relationships}
+
+% tree structure and root
+Query terms in are exposed through a tree to client systems.
+Each node in the tree is uniquely identified by a path, with at its root the different data sources available in the instance.
+When a client requests the children of the root path \verb|/|, the nodes returned correspond to the configured data sources in the instance.
+Below this root level, the tree is data source implementation-dependent.
+We review here the tree of an i2b2 data source.
+
+% tree browsing
+The data sources tree structure is based on \emph{relationships} between nodes.
+The most obvious relationship is the parent / child / sibling: based on a tree node, a client can requests its \emph{children}, \emph{parent} or \emph{sibling} nodes.
+This allows the client system to browse the tree in an iterative fashion, which is what happens with i2b2.
+I2b2 itself already exposes a tree, so the mapping of the tree is one-to-one below a certain level:
+\begin{verbatim}
+    /<data source name>/<i2b2 project name>/<i2b2 root node (category)/<i2b2 tree>/
+\end{verbatim}
+Note that it is not possible to use query terms coming from different data sources at same time, or in the case of i2b2 from different projects.
+
+% aggregate
+On top of the previously mentioned standard relationships, a data source implementation can declare additional ones, which can be seen as adding a dimension to the tree.
+We exploit here this possibility in order to expose aggregate data about the nodes.
+Here we add an \emph{aggregate} relationship to the \emph{categorical} nodes, which is exposed the client system.
+As such the client system knows about this possibility, and can request the aggregate values of node, in this specific case the values this categorical query term can take.
+
+% list of relationships supported by i2b2
+The relationships exposed by an i2b2 data source tree are:
 \begin{itemize}
-    \item tree browsing
-    \item translation to i2b2 format
-    \item enhancements made in IRCT: get aggregate values, data types, ?
+    \item \emph{Child}: returns the children node 
+    \item \emph{Modifier}: returns the modifiers associated to the requested tree node
+    \item \emph{Aggregate}: returns the aggregate data of the tree node (example: values of a categorical query term)
 \end{itemize}
 
-% % baseline
-% IRCT communicates with all of the supported back end systems using their native APIs.
-% The compatible resources expose their tree of concept of concepts, which contain the information on how to construct queries.
-% They support the following basic query types, based on a specific set of constraints:
-% \begin{itemize}
-%     \item Count queries: number of matching patients
-%     \item Patient set queries: identifiers on matching patients
-%     \item Data queries: any kind of medical data about the matching patients
-% \end{itemize}
 
-% The constraints used can be:
-% \begin{itemize}
-%     \item Concept constraints: presence of a specific ontology item for a patient
-%     \item Value constraints: some numeric, text or date value satisfying some constraints
-% \end{itemize}
+\subsubsection{Tree Nodes as Query Terms}
 
-% % additional features
-% Some features specific to some back end systems are supported only when using this system.
-% This is the case for systems implementing the tranSMART API v2:
-% \begin{itemize}
-%     \item Constraints based on studies / clinical trials
-%     \item Constraints based on pedigree / relation type
-% \end{itemize}
+% link tree node - query term
+To determine how tree nodes can be used as query terms, we do the following.
+Each node of the tree can declare a type. 
+If the node does not have a type, it is not queryable and is a simple "container" node.
+When the node has a type it can be use used as a query term with some predicates, and each predicate declares in the data source implementation which node types it supports.
+So we need to 
+\begin{enumerate*}
+    \item translate correctly the i2b2 node types into PIC-SURE node types
+    \item declare predicates that support those types
+\end{enumerate*}
 
-
-% Actions of irct on external defined by set of definitions (list: predicates supported, things executed on resources), resources declare what they support
-% Interface (RI) execute the action with the resource interface in the native protocol, result is returned as irct result
-
-% Architecture: 4 layers (the components): put diagram
-% Authentication done by irct (with external auth provider it seems?) - irct has set of credentials to talk to the resources 
-% It uses JWT for authentication -> not sure how this works
-% Jwt token is signed using the secret configured // https://auth0.com/docs/tokens/access-token
-% Openid connect // for tests:https://openidconnect.net/
-% ---
-% , using maven/java
-% War deployed in wildfly or similar
-% Hibernate for auto-gen of db (postgresql seems to work, event if a ext thing is compatible only with oracle: hmlsssynonyms)
-% Sql files are provided to fill db (not tested yet)
-% Configuration: should be guessed (wildfly can’t deploy without it)
-%Redirect_on_success: url to redirect after login
-%Client_secret: shared secret with auth provider
-%Userfield: user id field name in resp. From auth provider
-%Client_id: client id when talking to auth provider?
-%Domain: domain of auth provider?
-%Keyoutinmuntes: time out of key (120 mins default)
-
-% § set up of the thing: compiling from sources etc. packaged with docker (links to that)
-
-IRCT modificaitons
-% CORS implementation
-% postgresql + hibernate: naming strategy
-% function postgresql pgsql for resources
-
-% should this be included??? we want front-end and middle layer, let's see at the end
-\section{Clinical Research Systems Processing}
-% i2b2 - transmart how they work are explained in background
-% what is the relevant part here? should they be treated as blackbox in term of query processing? this chapter is about an interoperability layer
-
+% declaring types
+The types can be defined by the data source implementation, or be one of the primitive types offered by IRCT.
+With the i2b2 implementation, we do not use the primitive types, only the ones we define:
+\begin{samepage}
 \begin{itemize}
-    \item i2b2 processing (star schema)
-    \item transmart processing (extended star schema)
+    \item \verb|concept|: simple query term, maps to the \emph{simple} GB types
+    \item \verb|concept_numerical|: query term with numeric value, maps to \emph{numerical} GB type
+    \item \verb|concept_enum|: query term with categorical value, maps to \emph{categorical} GB type
+    \item \verb|concept_string|: query term with free-text value, maps to \emph{text} GB type
 \end{itemize}
+\end{samepage}
+
+% todo: predicates mapping??
+
+\subsubsection{Implementation}
+
+% data type
+Browsing the i2b2 ontology tree is already implemented in IRCT, we enhance it with some features that we need.
+The specific i2b2 data types listed before are implemented, and the extraction of those types from the i2b2 ontology tree as well.
+We also implement adding the relationships \emph{child} and \emph{aggregate} to the tree nodes if they need to.
+The i2b2 data source definition is modified accordingly.
+% todo: modifier?
+
+% aggregate
+Support for the \emph{aggregate} is implemented by making an ontology request to i2b2, and parsing the XML metadata associated to the node that contain this information, to embed the categorical values in the tree node.
+
+
+\subsection{Query Translation}
+\label{sec:interop-layer-query-translation}
+
+Here we show the process of translating a query from the PIC-SURE API format to the i2b2 API format.
+
+\subsubsection{Query Structure Translation}
+
+% i2b2 generality, terminology
+Recall that all the query terms are represented in the PIC-SURE API by a \emph{where clause}.
+In the i2b2 terminology, a query term is an \emph{item}, and a group of query terms linked by an \verb|OR| is a \emph{panel}.
+The \emph{panels} are linked together with an \verb|AND|.
+The translation process from the PIC-SURE to the i2b2 API iterates over all the \emph{where clauses}, translate them into an i2b2 \emph{item}, and assemble those \emph{items} appropriately into \emph{panels} according to the PIC-SURE logical operator used.
+
+% pic-sure query example
+\begin{samepage}
+See below an example of a PIC-SURE query, with query terms \verb|A|, \verb|B|, \verb|C| and \verb|D|:
+\begin{verbatim}
+[
+    { 
+        <A>
+    }, {
+        <B>,
+        "logicalOperator": "OR"
+    }, {
+        <C>,
+        "logicalOperator": "AND"
+    }, {
+        <D>,
+        "logicalOperator": "OR"
+    }
+]
+\end{verbatim}
+\end{samepage}
+
+% abstracted
+\begin{samepage}
+This query can be abstracted as seen below.
+Here a query term denoted by~\verb|*| is an \emph{item}, and a block of query terms denoted by~\verb|---| is a \emph{panel}.
+\begin{verbatim}
+     *    *       *    *
+    (A OR B) AND (C OR D)
+    --------     --------
+\end{verbatim}
+\end{samepage}
+
+% i2b2 format
+\begin{samepage}
+This query would be translated into the following i2b2 XML query format:
+\begin{verbatim}
+    <panel>
+        <item>A</item>
+        <item>B</item>
+    </panel>
+    <panel>
+        <item>C</item>
+        <item>D</item>
+    </panel>
+\end{verbatim}
+\end{samepage}
+
+
+\subsubsection{Query Terms Translation}
+
+When translating a query term into and i2b2 \emph{item}, some additional processing might be needed according to the predicate used.
+It is not the case for the simple \verb|CONTAINS| predicate, which is straightforwardly translated using the path in the i2b2 ontology tree.
+For the others, the additional information is added to the item:
+
+\begin{samepage}
+\begin{itemize}
+    \item \verb|CONSTRAIN_MODIFIER|: on the item is added the path of the applied modifier in the ontology tree
+    \item \verb|CONSTRAIN_DATE|: on the item is added the dates and parameters specified by the querier
+    \item \verb|CONSTRAIN_VALUE|: on the item is added the value and parameters specified by the querier
+\end{itemize}
+\end{samepage}
+
+
+\subsubsection*{Implementation}
+
+The translation of queries is left mostly untouched from its original implementation, except from the support of query terms negation that is implemented.
+
+
+\subsection{Results Management}
+
+After making the query request, IRCT registers in its own database the query with an identifier that encodes the different corresponding identifiers on the i2b2 side:
+\begin{verbatim}
+    <i2b2 project id>|<i2b2 query id>|<i2b2 result id>
+\end{verbatim}
+
+Using those i2b2 identifiers IRCT is able to request to i2b2 the status of the query.
+Once the query is over and successful, its patient count results are retrieved from i2b2 and stored in the IRCT database.
+
+
+\subsection{Miscellaneous implementation tasks}
+
+% hibernate change
+While IRCT uses Hibernate~\cite{todo} to abstract away the SQL database used, in our case using PostgreSQL does not work as the default SQL table names use some reserved keywords.
+To counter this we use the Hibernate feature that allows to add a specific prefix to the table names.
+
+% sql functions
+Configuring an i2b2 data source to be used in IRCT requires to add a specific set of data in the PostgreSQL database.
+To do so, we implement a PL/pgSQL function that can be called with the appropriate parameters to add an i2b2 resource.
+
+% cors
+Web browsers block by default web requests made to other web site than the web site it originate from, as a security feature.
+This can circumvented by using the Cross-Origin Resource Sharing (CORS)~\cite{todo} standard that modern web browsers implement.
+CORS allows web pages to make web requests to web site other than the web site from which the script is executed, but only if the web service serving the request explicitly allows the web site from which the request originates.
+This is checked automatically by the browser, which before making an actual HTTP request, will make an \verb|OPTION| HTTP request to the web service to get the list of domains allowed to make requests.
+This feature is not initially implemented by IRCT.
+We implement it by allowing unauthenticated HTTP \verb|OPTION| requests, and by embedding the appropriate headers into the answer.
+

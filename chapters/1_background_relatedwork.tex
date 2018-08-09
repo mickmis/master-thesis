@@ -16,7 +16,7 @@
 
 \subsection{i2b2}
 \label{sec:bg-i2b2}
-parameters
+% parameters
 % includes webcliend, workbench, etc.
 
 % talk about the inner data model of each
@@ -41,15 +41,21 @@ parameters
 \subsection{PIC-SURE API and IRCT}
 \label{sec:bg-picsure}
 
-% todo: resource, resource definition, what it contains
-
-% % overview
+% overview
 % The National Institutes of Health (NIH) of the U.S. government launched in 2013 the first phase of the Big Data to Knowledge (BD2K)~\cite{BD2K} whose one of the goal is to exploit the immense amount of big data information to advance knowledge in modern biomedical research.
 % One of those center of excellence is the PIC-SURE (Patient-centered Information Commons: Standardized Unification of Research Elements)~\cite{PIC-SURE} whose goal is create a scalable toolkit to enable patient-centered information commons.
 % etc. created within HMS DBMI [cite], open source, 
 % led by paul avillach One of their achievement is the BD2K PIC-SURE RESTful API [bd2k-picsure.hms.harvard.edu] that aims to incorporate multiple heterogeneous clinical research systems. 
 % The official implementation of this API is called Inter Resource Communication Tool (IRCT).
 
+
+\paragraph{PIC-SURE API}
+
+% todo: resource, resource definition, what it contains
+% the different services
+
+
+\paragraph{IRCT}
 % % pic-sure api description
 % While not actually being a clinical research system, the IRCT can be seen as a meta system that expose data of other systems through a common API.
 % Restful api for heteregeonous datasets ,decentralized fashion, access with single comm. Layer -> interoperability layer (check the api doc pdf)
@@ -126,6 +132,10 @@ parameters
 % For example if the tree supports the relationship \verb|CHILDREN|, a client can request all the children of a certain node. 
 
 \subsection{Glowing Bear}
+
+% put relevant services and components
+\paragraph{Angular}
+% todo: angular, services, component - modules, models
 % %§ GB: Most recent Angular version is now ng5, AngularJS refers to the first generation of Angular which is sth. glowing bear no longer uses. see https://blog.angular.io/version-5-0-0-of-angular-now-available-37e414935ced
 
 % \subsubsection{tranSMARTApp}
@@ -154,7 +164,7 @@ parameters
 % angular: services
 
 \subsection{OpenID Connect and Keycloak}
-todo: claim, jwt
+% todo: claim, jwt
 
 % todo: backgorund about oidc (client id, etc.)
 
@@ -242,6 +252,10 @@ todo: claim, jwt
 
 % -------------------------------------------------------
 \section{Related Work}
+% transmart
+% i2b2
+% in generalities
+
 % things that could be used to solve our problem as a whole (this is different form technological choices!)
 % split related in 2 for the 2 objectives: this makes sense because they are relatively different
 \begin{itemize}
@@ -249,7 +263,8 @@ todo: claim, jwt
     \item OLAP / MDX
     \item other approaches to medical data browsing?
     \item SHRINE
-    \item privacy-preserving solutions
+    \item privacy-preserving solutions?
+    \item borderline
 \end{itemize}
 
 % l-i2b2: https://www.ncbi.nlm.nih.gov/pubmed/29295360
