@@ -1,33 +1,76 @@
 \chapter{Privacy-Preserving Cohort Exploration}
 \label{sec:medco}
 
-
-% thesis: medco subject to previous work of author, modified as such... (check out paper for more info)
-
 % intro
-% We adapt and integrate a privacy-pres
-% Building on top of the interoperability layer described in the last section, we achieve in this section the ability to do cohort exploration with our system in a privacy-preserving way.
+At that point we have all the basis of our solution, including the interoperability layer.
+We are building on this to integrate the privacy-preserving cohort explorer MedCo in this section, in a way that is similar, but different, to i2b2.
+As MedCo is detailed exhaustively in~\cite{todo} we will focus on its integration with our system, and will only summarize the major steps of execution.
+
+% outline
+After reviewing some necessary definitions, we give an overview of the MedCo workflow.
+
+
 
 % explain what is medco, several nodes, etc.
-\section{Detailed Workflow}
+
+
+\section{Definitions}
+
+We use in this section the following definitions:
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+$Pk_u, pk_u$ & public and private keys of user $u$ \\\hline
+$Pk_i, pk_i$ & public and private keys of MedCo node $i$ \\\hline
+$Pk_C$ & collective authority public key \\\hline
+$S_i$ & distributed deterministic tagging secret of MedCo node $i$ \\\hline
+$ENC_k[a]$ & homomorphic encryption of $a$ with key $k$ \\\hline
+$DDT_k[a]$ & distributed deterministic tag of $a$ with secret $k$ \\\hline
+$q_v$ & integer representing the query term $v$ \\\hline
+$R_i$ & result of MedCo node $i$ \\\hline
+$f_j \in \{0, 1\}$ & dummy flag of patient $j$ \\\hline
+\end{tabular}
+\end{center}
+
+
+\section{MedCo Detailed Workflow}
 
 We show here the detailed workflow of our system when using MedCo.
 The first two step \ref{enum:wf-interop-login} and \ref{enum:wf-interop-login} from the interoperability layer (section~\ref{sec:interoplayer-wf}) are the same, and the following differs:
 
-\begin{enumerate}
-\item \textbf{User Login}:
-T
+% todo: put medco more detailed diagram, from paper or what?
 
-\end{enumerate}
+% todo: too much detail in workflow: should be more high level, and details should be in medco processing stuff
 
-% todo: put medco more detailed diagram
+
+to define: BACKGROUND
+- protocol list medco?
+- homomorphic encryption
+- collective authority
 
 \begin{itemize}
+\item \textbf{User Login}: \emph{same as for i2b2}
+
+\item \textbf{Glowing Bear Initialization}: \emph{same as for i2b2}
+
 \item \textbf{Query Construction}:
 The user browses the tree of query terms and uses them to construct a query corresponding to a patient set.
-When adding a term into the query panel, Glowing Bear might, according to its type, make a background request to fetch the term metadata, which is the case for example for categorical or numerical terms.
-The user then optionally sets value(s) to the query term.
+For each query term, an integer $q_v$ representing the term is extracted from its metadata and encrypted using the public key of the collective authority $Pk_C$, denoted $ENC_{Pk_C}[q_v]$.
 
+\item \textbf{Query Submission}:
+The query with encrypted terms $ENC_{Pk_C}[q_v]$ is submitted to IRCT through the PIC-SURE API.
+
+\item \textbf{Query Translation}:
+The query is translated the same way as i2b2, and submitted to all of the MedCo nodes at the same time.
+
+\item \textbf{Query Processing}:
+MedCo processes the query by computing the encrypted results encrypted with the user's key $ENC_{Pk_u}[R_i]$.
+
+\item \textbf{Result Storage}: \emph{same as for i2b2}
+
+\item \textbf{Result Display}:
+Glowing Bear receives the encrypted results $ENC_{Pk_u}[R_i]$, decrypts them using the user's private key $pk_u$ and displays them to the user.
 \end{itemize}
 
 mention about edco resource ahs to be implemented: in two parts mainly: tree and querhy
@@ -107,11 +150,32 @@ Also this feature is not used in MedCo for the encrypted terms.
 It implies though that the ontologies between the different MedCo nodes have to be maintained identical, at least for the ontologies meant to be queried through MedCo.
 
 \section{MedCo Query Processing}
+\label{sec:medco-process}
+
+
+\item \textbf{MedCo Distributed Deterministic Tagging}:
+All the MedCo nodes runs together a protocol to compute their own distributed deterministic tag of the encrypted query terms, using their secret $S_i$, denoted $DDT_{S_i}[q_v]$.
+
+\item \textbf{I2b2 Query Submission}:
+The MedCo nodes each query their local i2b2 instances with the tagged query terms $DDT_{S_i}[q_v]$, and get a patient set as a result, which contains both real and dummy patients.
+
+\item \textbf{Dummy Flags Aggregation}:
+The MedCo nodes retrieve from their local i2b2 instance the patient dummy flags $ENC_{Pk_C}[f]$ of the resulting set.
+Those flags are a $0$ if the patient is a dummy, or a $1$ if real, and are encrypted with the collective authority public key $Pk_C$.
+They are then homomorphically summed, which gives the encrypted true result of the query $ENC_{Pk_C}[R]$.
+
+\item \textbf{Result Encryption Key Switching}
+
+Optionnally, the MedCo nodes and run a secure shuffling results can be randomshuffled 
+- key switching and shuffle
+
+
 \begin{itemize}
     \item summarize how medco works
     \item modifications made: shrine drop, ?
 \end{itemize}
 
+c'est dans le papier wesh
 secure shuffle with aaaaaaa
 
 % each ontologiy at each site has 2 ontologies, clear and not clear, explorable by client or not 
