@@ -5,16 +5,14 @@
 At that point we have all the basis of our solution, including the interoperability layer.
 We are building on this to integrate the privacy-preserving cohort explorer MedCo in this section, in a way that is similar, but different, to i2b2.
 As MedCo is detailed exhaustively in~\cite{todo} we will focus on its integration with our system, and will only summarize the major steps of execution.
+This section assumes knowledge of background information from section~\ref{sec:bg-medco}.
 
 % outline
 After reviewing some necessary definitions, we give an overview of the MedCo workflow.
+Then we see the process of constructing a query in Glowing Bear for MedCo, how it is broadcasted to the MedCo nodes, the query processing in each of the nodes, and finally the handling of the result.
 
 
-
-% explain what is medco, several nodes, etc.
-
-
-\section{Definitions}
+\section*{Definitions}
 
 We use in this section the following definitions:
 
@@ -34,20 +32,21 @@ $f_j \in \{0, 1\}$ & dummy flag of patient $j$ \\\hline
 \end{center}
 
 
+% todo: put medco more detailed diagram, from paper or what?
+% todo: put the following in the intro? or in some sections afteR? or both ?
+% mention about medco resource has to be implemented: in two parts mainly: tree and querhy
+% medco builds on i2b2, as a cell in hive 
+% uses i2b2 api with some fine tuning 
+
+% assumptions made:
+% - ontologies match exactly
+% - authentication: user exists in the 3 pms? builds on i2b2 but each auth with their own pm
+
 \section{MedCo Detailed Workflow}
 
 We show here the detailed workflow of our system when using MedCo.
-The first two step \ref{enum:wf-interop-login} and \ref{enum:wf-interop-login} from the interoperability layer (section~\ref{sec:interoplayer-wf}) are the same, and the following differs:
+It follows the structure of the i2b2 workflow from section~\ref{sec:interoplayer-wf}, with some steps that are different.
 
-% todo: put medco more detailed diagram, from paper or what?
-
-% todo: too much detail in workflow: should be more high level, and details should be in medco processing stuff
-
-
-to define: BACKGROUND
-- protocol list medco?
-- homomorphic encryption
-- collective authority
 
 \begin{itemize}
 \item \textbf{User Login}: \emph{same as for i2b2}
@@ -73,44 +72,64 @@ MedCo processes the query by computing the encrypted results encrypted with the 
 Glowing Bear receives the encrypted results $ENC_{Pk_u}[R_i]$, decrypts them using the user's private key $pk_u$ and displays them to the user.
 \end{itemize}
 
-mention about edco resource ahs to be implemented: in two parts mainly: tree and querhy
-
-result is same as i2b2
-tree is same as i2b2 almost / converter for types added
-
-medco builds on i2b2, as a cell in hive 
-
-uses i2b2 api with some fine tuning 
-(result in json show it 
-encrypted key show it
-
-medco cell processing show it : encrypted -> tagged)
 
 \section{Glowing Bear Query Construction}
-say it is inherated from i2b2 / 
-data types new
-% assumptions made:
-% - ontologies match exactly
-% - authentication: user exists in the 3 pms?
 
+% intro
+In this section we show how Glowing Bear constructs a MedCo query to be sent to IRCT through the PIC-SURE API.
 
-% for implementation of medco res. interface / extends though
+% resource definition: tree
+The tree of query terms exposed through PIC-SURE is the same as it would be for i2b2: an i2b2 ontology cell is used to hold the MedCo ontology. 
+The differences lies in the additional constraints and metadata added on the ontology at loading time, which we use in Glowing Bear to construct the query.
 
-\begin{itemize}
-    \item tree browsing, number to encrypt in the tree
-    \item same as described before, with a special data type and predicate used
-    \item encryption of terms 
-    \item format of encrypted terms
+% encrypted tag
+While browsing the tree from Glowing Bear, the IRCT data source implementation for MedCo sets the tree node types properly, according to the presence of a specific tag in the i2b2 ontology, flagging the presence of encrypted query term.
+The identifier of the ontology element holds this tag and the integer $q_v$:
+\begin{verbatim}
+    ENC_ID:<integer representing the query term>
+\end{verbatim}
+
+% types list
+The MedCo tree node types are the same as the i2b2 types, with the difference that they indicate the encryption:
+\begin{itemize}    
+    \setlength\itemsep{0em}
+
+    \item \verb|enc_concept|
+    \item \verb|enc_concept_numerical|
+    \item \verb|enc_concept_enum|
+    \item \verb|enc_concept_string|
 \end{itemize}
 
-% gen temporary priv / pub pair of keys for user, in impl: hardcoded
-% encrypt with group.toml file from config the values to be sent
-% decrypt w/ priv key the results
+% resource definition: predicates, encrypted value
+Predicates exposed through PIC-SURE are the same as i2b2, except with the support of the additional MedCo data types.
+To use those predicates with encrypted query terms, we use a format that is recognized by the MedCo data source implementation in IRCT. 
+To do so we embed in the query term path the base64-encoded encrypted integer the following way:
+\begin{verbatim}
+    /<data source name>/<MedCo project name>/ENCRYPTED_KEY/<encrypted integer>/
+\end{verbatim}
+
 
 \subsection*{Implementation}
 
-- npm package
-- key gen
+% tree / data types
+Implementation of the i2b2 tree browsing in IRCT is the same as the one used for i2b2, except for the data types that are modified on the fly.
+The modification is made by a simple mapper that maps the i2b2 data types to the MedCo ones, as from the i2b2 point-of-view those are the same.
+We implement the new data types for MedCo, which are the same as the i2b2 ones except that they are prefixed by \verb|enc_| to represent the encryption by MedCo of those query terms.
+
+% crypto lib implementation and usage
+To support the cryptographic primitives of MedCo in Glowing Bear, we use GopherJS~\cite{todo} to transpile original MedCo code written in Go~\cite{todo} to Javascript.
+The resulting Javascript library is package as a npm module~\cite{todo} to be added to Glowing Bear dependencies.
+It supports generating a pair of public and private keys, encrypting and decrypting values.
+The support of those things is added to the \emph{PIC-SURE Resource Service} in Glowing Bear.
+
+% enc dec result
+In Glowing Bear we implement hooks that 
+\begin{enumerate*}
+    \item detects and encrypts query terms that should be encrypted,
+    \item encrypted results that are decrypted.
+\end{enumerate*}
+To support the encryption with the collective authority public key $Pk_C$ we add a configuration option that specifies the URL at which it should be retrieved.
+To support decryption with the user private key $pk_u$ we add at the initialization of Glowing Bear the generation of a random pair of keys.
 
 
 \section{IRCT Query Broadcast}
@@ -150,6 +169,10 @@ Also this feature is not used in MedCo for the encrypted terms.
 It implies though that the ontologies between the different MedCo nodes have to be maintained identical, at least for the ontologies meant to be queried through MedCo.
 
 \section{MedCo Query Processing}
+
+% medco cell processing show it : encrypted -> tagged)
+
+
 \label{sec:medco-process}
 
 
@@ -188,11 +211,11 @@ secure shuffle with aaaaaaa
 \section{Glowing Bear Result Processing}
 
 % intro
-Following the same process as i2b2 described in section~\ref{sec:interoplayer-gb-results}, the results of the query are retrieved from IRCT.
-The difference here is in the format of the results, as they are encrypted with the public key $P_k$ sent along the query.
+Following the same process as i2b2 described in section~\ref{sec:interoplayer-gb-results}, the encrypted results of the query $ENC_{Pk_u}[R_i]$ are retrieved from IRCT.
+The difference here is in the format of the results, as they are encrypted with the public key $Pk_u$ sent along the query.
 
 % result format
-There is one result per MedCo nodes.
+There is one result $ENC_{Pk_u}[R_i]$ per MedCo node $i$.
 According to access level of the user, it is possible to identify which result is coming from which node, or the result were securely shuffled between the nodes.
 The format of the result is a JSON string with the following format:
 
@@ -207,7 +230,7 @@ The format of the result is a JSON string with the following format:
 \end{verbatim}
 
 % decryption
-All the encrypted results are then decrypted using the secret private key $p_k$, summed together, and displayed to the user using the same process as for i2b2.
+All the encrypted results $ENC_{Pk_u}[R_i]$ are then decrypted using the private key $pk_u$ to give $R_i$, summed together, and displayed to the user using the same process as for i2b2.
 Additional information, containing the more detailed breakdown of results per node, is also displayed.
 
 
