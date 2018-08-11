@@ -23,8 +23,8 @@ $Pk_u, pk_u$ & public and private keys of user $u$ \\\hline
 $Pk_i, pk_i$ & public and private keys of MedCo node $i$ \\\hline
 $Pk_C$ & collective authority public key \\\hline
 $S_i$ & distributed deterministic tagging secret of MedCo node $i$ \\\hline
-$ENC_k[a]$ & homomorphic encryption of $a$ with key $k$ \\\hline
-$DDT_k[a]$ & distributed deterministic tag of $a$ with secret $k$ \\\hline
+$\text{ENC}_k[a]$ & homomorphic encryption of $a$ with key $k$ \\\hline
+$\text{DDT}_k[a]$ & distributed deterministic tag of $a$ with secret $k$ \\\hline
 $q_v$ & integer representing the query term $v$ \\\hline
 $R_i$ & result of MedCo node $i$ \\\hline
 $f_j \in \{0, 1\}$ & dummy flag of patient $j$ \\\hline
@@ -32,20 +32,10 @@ $f_j \in \{0, 1\}$ & dummy flag of patient $j$ \\\hline
 \end{center}
 
 
-% todo: put medco more detailed diagram, from paper or what?
-% todo: put the following in the intro? or in some sections afteR? or both ?
-% mention about medco resource has to be implemented: in two parts mainly: tree and querhy
-% medco builds on i2b2, as a cell in hive 
-% uses i2b2 api with some fine tuning 
-
-% assumptions made:
-% - ontologies match exactly
-% - authentication: user exists in the 3 pms? builds on i2b2 but each auth with their own pm
-
 \section{MedCo Detailed Workflow}
 
 We show here the detailed workflow of our system when using MedCo.
-It follows the structure of the i2b2 workflow from section~\ref{sec:interoplayer-wf}, with some steps that are different.
+It follows the structure of the i2b2 workflow from section~\ref{sec:interoplayer-wf} with some steps that are different.
 
 
 \begin{itemize}
@@ -55,21 +45,22 @@ It follows the structure of the i2b2 workflow from section~\ref{sec:interoplayer
 
 \item \textbf{Query Construction}:
 The user browses the tree of query terms and uses them to construct a query corresponding to a patient set.
-For each query term, an integer $q_v$ representing the term is extracted from its metadata and encrypted using the public key of the collective authority $Pk_C$, denoted $ENC_{Pk_C}[q_v]$.
+For each query term, an integer $q_v$ representing the term is extracted from its metadata and encrypted using the public key of the collective authority $Pk_C$, denoted $\text{ENC}_{Pk_C}[q_v]$.
 
 \item \textbf{Query Submission}:
-The query with encrypted terms $ENC_{Pk_C}[q_v]$ is submitted to IRCT through the PIC-SURE API.
+The query with encrypted terms $\text{ENC}_{Pk_C}[q_v]$ is submitted to IRCT through the PIC-SURE API.
 
 \item \textbf{Query Translation}:
 The query is translated the same way as i2b2, and submitted to all of the MedCo nodes at the same time.
 
 \item \textbf{Query Processing}:
-MedCo processes the query by computing the encrypted results encrypted with the user's key $ENC_{Pk_u}[R_i]$.
+MedCo processes the query by computing the encrypted results encrypted with the user's key $\text{ENC}_{Pk_u}[R_i]$.
+Details of this step are in section~\ref{sec:medco-query}.
 
 \item \textbf{Result Storage}: \emph{same as for i2b2}
 
 \item \textbf{Result Display}:
-Glowing Bear receives the encrypted results $ENC_{Pk_u}[R_i]$, decrypts them using the user's private key $pk_u$ and displays them to the user.
+Glowing Bear receives the encrypted results $\text{ENC}_{Pk_u}[R_i]$, decrypts them using the user's private key $pk_u$ and displays them to the user.
 \end{itemize}
 
 
@@ -80,11 +71,11 @@ In this section we show how Glowing Bear constructs a MedCo query to be sent to 
 
 % resource definition: tree
 The tree of query terms exposed through PIC-SURE is the same as it would be for i2b2: an i2b2 ontology cell is used to hold the MedCo ontology. 
-The differences lies in the additional constraints and metadata added on the ontology at loading time, which we use in Glowing Bear to construct the query.
+The differences lie in the additional constraints and metadata added on the ontology at loading time, which we use in Glowing Bear to construct the query.
 
 % encrypted tag
 While browsing the tree from Glowing Bear, the IRCT data source implementation for MedCo sets the tree node types properly, according to the presence of a specific tag in the i2b2 ontology, flagging the presence of encrypted query term.
-The identifier of the ontology element holds this tag and the integer $q_v$:
+The identifier of the ontology element contains this tag and the integer $q_v$:
 \begin{verbatim}
     ENC_ID:<integer representing the query term>
 \end{verbatim}
@@ -118,7 +109,7 @@ We implement the new data types for MedCo, which are the same as the i2b2 ones e
 
 % crypto lib implementation and usage
 To support the cryptographic primitives of MedCo in Glowing Bear, we use GopherJS~\cite{todo} to transpile original MedCo code written in Go~\cite{todo} to Javascript.
-The resulting Javascript library is package as a npm module~\cite{todo} to be added to Glowing Bear dependencies.
+The resulting Javascript library is packaged as a npm module~\cite{todo} to be added to Glowing Bear dependencies.
 It supports generating a pair of public and private keys, encrypting and decrypting values.
 The support of those things is added to the \emph{PIC-SURE Resource Service} in Glowing Bear.
 
@@ -126,7 +117,7 @@ The support of those things is added to the \emph{PIC-SURE Resource Service} in 
 In Glowing Bear we implement hooks that 
 \begin{enumerate*}
     \item detects and encrypts query terms that should be encrypted,
-    \item encrypted results that are decrypted.
+    \item detects and decrypts encrypted results.
 \end{enumerate*}
 To support the encryption with the collective authority public key $Pk_C$ we add a configuration option that specifies the URL at which it should be retrieved.
 To support decryption with the user private key $pk_u$ we add at the initialization of Glowing Bear the generation of a random pair of keys.
@@ -141,10 +132,9 @@ Running the query with the MedCo nodes uses the i2b2 XML API, but do not reuse t
 % threading
 The process to generate the query in the i2b2 XML API format is the same as i2b2, described section~\ref{sec:interop-layer-query-translation}, even though the paths of the queried items are encrypted values.
 However the submission of the query to i2b2 is different, as the query has to be submitted to all the MedCo nodes simultaneously.
-This is needed as the MedCo nodes later need to synchronize between to perform some collective cryptographic operations.
+This is needed as the MedCo nodes later need to synchronize between to perform some collective cryptographic protocols.
+Note that the authentication is the same as for i2b2: the token is sent in the query, assuming that the requesting user is registered in all the nodes.
 
-
-% medco resource, where? should be before
 
 \subsection*{Implementation}
 
@@ -156,66 +146,59 @@ After a set amount of time without answer from the MedCo nodes, they timeout.
 
 % shrine drop
 The query is submitted directly to the MedCo nodes. 
-This is different from the original MedCo behavior that relies on SHRINE~\cite{todo} to do so.
+This is different from the original MedCo behavior that relies on SHRINE~\cite{todo}.
 In this previous implementation, the query was submitted to a single SHRINE node, and only after the query was broadcasted to the MedCo nodes.
 Here this broadcaster role is taken by the PIC-SURE data source implementation of MedCo.
-The reasoning bypassing SHRINE is that it is a multi-components software, that is complicated to set up and deploy, and is expensive to maintain.
+The reasoning behind bypassing SHRINE is that it is a multi-components software, that is complicated to set up and deploy, and expensive to maintain.
 Moreover it was not bringing a significant added value to MedCo.
 
 % ontology
-Doing so, we lose a feature offered by SHRINE, which is the ontology translation that SHRINE operates, between a common network ontology and a local i2b2 ontology.
+Doing so, we lose a feature offered by SHRINE, which is the ontology translation that SHRINE operates between a common network ontology and a local i2b2 ontology.
 This is not a big problem, as anyway the mapping between the network and common ontology needed to be made and maintain manually in SHRINE.
 Also this feature is not used in MedCo for the encrypted terms.
 It implies though that the ontologies between the different MedCo nodes have to be maintained identical, at least for the ontologies meant to be queried through MedCo.
 
+
 \section{MedCo Query Processing}
+\label{sec:medco-query}
 
-% medco cell processing show it : encrypted -> tagged)
-
-
-\label{sec:medco-process}
-
-
-\item \textbf{MedCo Distributed Deterministic Tagging}:
-All the MedCo nodes runs together a protocol to compute their own distributed deterministic tag of the encrypted query terms, using their secret $S_i$, denoted $DDT_{S_i}[q_v]$.
-
-\item \textbf{I2b2 Query Submission}:
-The MedCo nodes each query their local i2b2 instances with the tagged query terms $DDT_{S_i}[q_v]$, and get a patient set as a result, which contains both real and dummy patients.
-
-\item \textbf{Dummy Flags Aggregation}:
-The MedCo nodes retrieve from their local i2b2 instance the patient dummy flags $ENC_{Pk_C}[f]$ of the resulting set.
-Those flags are a $0$ if the patient is a dummy, or a $1$ if real, and are encrypted with the collective authority public key $Pk_C$.
-They are then homomorphically summed, which gives the encrypted true result of the query $ENC_{Pk_C}[R]$.
-
-\item \textbf{Result Encryption Key Switching}
-
-Optionnally, the MedCo nodes and run a secure shuffling results can be randomshuffled 
-- key switching and shuffle
-
+We show in this section a summarized version of the query execution of MedCo, which is implemented as an i2b2 cell that does some pre and post processing around executing the query in the i2b2 data repository.
+This process is left unchanged from its original implementation described in~\cite{todo}.
+It starts at the point where IRCT submits to all the MedCo nodes the query containing the encrypted query terms $\text{ENC}_{Pk_C}[q_v]$.
 
 \begin{itemize}
-    \item summarize how medco works
-    \item modifications made: shrine drop, ?
+
+\item \textbf{MedCo Distributed Deterministic Tagging}:
+All the MedCo nodes runs together a protocol to compute their own distributed deterministic tag of the encrypted query terms $\text{ENC}_{Pk_C}[q_v]$, using their secret $S_i$, denoted $\text{DDT}_{S_i}[q_v]$.
+
+\item \textbf{I2b2 Query Submission}:
+The MedCo nodes each query their local i2b2 instances with the tagged query terms $\text{DDT}_{S_i}[q_v]$, and get a patient set as a result, which contains both real and dummy patients.
+The values stored in i2b2 are the tagged values $\text{DDT}_{S_i}[x]$, generated during the data loading. 
+This allows to let i2b2 answers the query as in the normal, insecure process.
+
+\item \textbf{Dummy Flags Aggregation}:
+The MedCo nodes retrieve from their local i2b2 instance the patient dummy flags $\text{ENC}_{Pk_C}[f_j]$ of the resulting set.
+Those flags are a $0$ if the patient is a dummy, or a $1$ if real, and are encrypted with the collective authority public key $Pk_C$.
+They are then homomorphically summed, which gives the encrypted true result of the query $\text{ENC}_{Pk_C}[R_i]$ for the node $i$.
+
+\item \textbf{Result Encryption Key Switching}
+Then the MedCo nodes run a protocol together to switch the encryption from the collective authority key $Pk_C$ to the user's public key $Pk_u$, the result is $\text{ENC}_{Pk_u}[R_i]$.
+Optionally the MedCo nodes run a secure shuffling protocol, to break the link between the node and its result.
+This encrypted result is sent back to IRCT.
+
 \end{itemize}
 
-c'est dans le papier wesh
-secure shuffle with aaaaaaa
-
-% each ontologiy at each site has 2 ontologies, clear and not clear, explorable by client or not 
-% schemas "medcon otology" " i2b2metadata_i2b2"
-
-
-% no repeat of what medco process is doing and already described in paper, cite it in detail though
+\label{sec:medco-process}
 
 
 \section{Glowing Bear Result Processing}
 
 % intro
-Following the same process as i2b2 described in section~\ref{sec:interoplayer-gb-results}, the encrypted results of the query $ENC_{Pk_u}[R_i]$ are retrieved from IRCT.
+Following the same process as i2b2 described in section~\ref{sec:interoplayer-gb-results}, the encrypted results of the query $\text{ENC}_{Pk_u}[R_i]$ are retrieved from IRCT.
 The difference here is in the format of the results, as they are encrypted with the public key $Pk_u$ sent along the query.
 
 % result format
-There is one result $ENC_{Pk_u}[R_i]$ per MedCo node $i$.
+There is one result $\text{ENC}_{Pk_u}[R_i]$ per MedCo node $i$.
 According to access level of the user, it is possible to identify which result is coming from which node, or the result were securely shuffled between the nodes.
 The format of the result is a JSON string with the following format:
 
@@ -230,8 +213,8 @@ The format of the result is a JSON string with the following format:
 \end{verbatim}
 
 % decryption
-All the encrypted results $ENC_{Pk_u}[R_i]$ are then decrypted using the private key $pk_u$ to give $R_i$, summed together, and displayed to the user using the same process as for i2b2.
-Additional information, containing the more detailed breakdown of results per node, is also displayed.
+All the encrypted results $\text{ENC}_{Pk_u}[R_i]$ are then decrypted using the private key $pk_u$ to give $R_i$, summed together, and displayed to the user using the same process as for i2b2.
+Additional information containing the more detailed breakdown of results per node is also displayed.
 
 
 \subsection*{Implementation}

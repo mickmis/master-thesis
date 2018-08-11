@@ -56,7 +56,6 @@ The result of a review of available open-source front-end for cohort exploration
     \item i2b2 webclient~\cite{todo}
     \item i2b2 workbench~\cite{todo}
     \item transmartApp~\cite{todo}
-    \item Borderline UI~\cite{todo}
     \item Glowing Bear~\cite{todo}
 \end{itemize}
 
@@ -71,13 +70,6 @@ The \emph{i2b2 webclient} uses \emph{yui}~\cite{todo}, a javascript framework de
 \emph{tranSMARTApp} is a web application rendered on the server-side in Java, alongside tranSMART, and not a pure web client.
 For those reasons we choose to not retain those solutions.
 We can also mention the \emph{i2b2 workbench}, client desktop application for i2b2, but as it is not web-based we discard it as well
-
-% borderline
-\emph{Borderline} is a set of components implemented in Javascript, including a user interface, that allows to create and execute queries against clinical research platforms.
-Compared to the others, it is a more serious candidate. It is web-based, modern and supports tranSMART, with plans to support i2b2 as well.
-However it is at the time of this project in a work-in-progress state, under heavy development, thus not yet stable.
-Additionally it does not support API translation, only some kind of API proxying.
-For those reason we choose not to retain this solution.
 
 % introduce gb yep
 \emph{Glowing Bear} is the front end system we choose to retain.
@@ -148,8 +140,6 @@ To summarize, our interoperability layer is composed of
     \item an interoperability module in  Glowing Bear, which has support for both the tranSMART REST API v2, and PIC-SURE;
     \item IRCT, which has support for i2b2 and MedCo.
 \end{enumerate} 
-
-% todo: mention borderline along pic-sure?
 
 \subsection{Technical Choices Summary}
 
