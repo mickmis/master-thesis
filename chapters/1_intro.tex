@@ -17,6 +17,9 @@
 %     \item evaluation of how implementation meet requirements
 % \end{itemize}
 
+% wording of everything?
+
+% motivation / problem
 \chapter{Introduction}
 % todo: add citation in here
 % 1: https://www.karger.com/Article/FullText/481682 : cite
@@ -28,128 +31,66 @@ Existing technical solutions to exploit those data sets exist and are widely use
 % data scattered in systems
 However those clinical research platforms are generally deployed at single clinical sites, or at best a group of them, hosting their own data.
 This leads to the presence of multiple and fragmented systems at different locations all over the world, a situation that is not close to change as a lot of effort and money has been invested in those by clinical sites on often tight budgets.
+Centralizing those systems is not feasible either because of the substantial efforts, thus cost, of doing so, on top of the serious privacy concerns this implies.
 Due to this scattered data, researchers find themselves limited by the amount of data that their own clinical sites produce.
 
 % data sharing
 A straightforward solution to this problem is to share the data between the clinical sites, however this faces two challenges.
 First challenge is technical, the different clinical research platforms are not interoperable together.
 Second is legal and ethic, as medical data are highly sensitive information about individuals.
-Those are protected by strict regulations such as HIPAA in the US or GDPR in EU, and data leaks could be devastating to the concerned persons, thus privacy and security guarantees are capital.
+Those are protected by strict regulations such as HIPAA~\cite{todo} in the USA or GDPR~\cite{todo} in the EU, and data leaks could be devastating to the concerned persons, thus privacy and security guarantees are capital.
 
-% solution to this \ contribution
-In this paper we build a system that takes a step towards the technical convergence of those systems by providing an interoperability layer for i2b2 and tranSMART, exploitable by a unique front end, Glowing Bear.
+% solution to this / contribution
+In this paper we show a system we build that takes a step towards the technical convergence of those systems by providing an interoperability layer for i2b2 and tranSMART, exploitable by a unique front end, Glowing Bear.
 Moreover this interoperability layer offers as well the ability to securely share medical data between clinical sites using the privacy-preserving system MedCo.
 
 
-\section{Problem Statement}
-\label{sec:problem}
+\section{Objectives}
 
-\subsection*{Motivation}
+% clinical research systems compat
+We aim to provide a technical solution to enable researchers to explore data from the clinical research platforms \emph{i2b2} and \emph{tranSMART} from a common front end.
+In order to expand further the pool of potential data accessible through this front end, we also aim to support \emph{MedCo} which provides strong privacy and security guarantees.
+Those systems can be hosted at arbitrary physical locations.
+This technical solution should also lay the basis to be later extended to other systems, and allow combining patients between different systems.
 
+% front end features
+The front end should offer basic cohort exploration features at least, i.e. creating patient set based on some criterion and get the set size.
+Both inclusion and exclusion criterion should be supported.
+Criterion should include basic presence of some query terms, and also based on categorical or numerical values.
 
-% todo: get inspiration from papers
-% 2 problems (here)  --> 2 objectives (in objective)
-
-% IMPORTANT: why do these 2 objectives should be taken together, and not separately, and why not others
-
-\subsection*{Objectives}
-% check http://www.ceptara.com/blog/how-to-write-problem-statement
-%-Why this is a hard/open problem?
-%-State-of-the-Art not sufficient (refer to related work?)
-% goal: solving this problem: goal: common - privacy preserving
-
-% facilitating adoption / meaningful things -> open-source / docker / secure / etc (overlap with requirements? or should that go to the requirements? check how to split)
-% 2 problems (from motivations)  --> 2 objectives (here)
-
-
-% These characteristics define two main objectives to fulfill. 
-% First, the front end in question will need to be able to communicate with the main open-source several clinical research platforms, to cover a major part of the platforms used by researchers.
-% Second, the front end , namely MedCo, the only privacy-preserving platform.
-% todo: in the analyses of what are the platforms, mention what they are
-
-% --> focus on cohort exploration (why?)
-
-
-\begin{itemize}
-    \item data scattered in several ways / all the constraints that prevent what said previously to be achieved
-    \item physically in different institutions / organizations
-    \item technologically heterogeneous, (backend systems, apis to access, semantic different, etc.)
-    \item legal constraints, risk of leaks
-    \item  patients reluctant to share their data
-\end{itemize}
-
-% todo: emphasize, bold or italic, the objectives
-% 2 obj that stem from Enable scientists to access more data from a common interface by...
-\begin{itemize}
-    \item common system to unify different system, have a common one
-    \item accessing sensitive data that would otherwise not be shared
-\end{itemize}
-
-% FROM WARD
-% ======== motivation exposes problem
-
-
-Combining data from these different data warehouses is hard because of technical and interoperability reasons. In this paper we will focus on the first problem. Moving all data to one data warehouse is not feasible, because of the amount of work to do so and because different data warehouses are specialized in different data types (structured clinical data, large scale genomics data, etc.).
-
-Also, although there are many different data warehouses for health care data, many of them need similar functionality: patient cohort selection, data selection, exploratory analysis, export functionality. However, different data warehouses currently waste financial and development resources on building and maintaining their user interfaces.
-
-% ======== problems solved to objectives 
-In this paper we aim to:
-- allow one existing, modern data warehouse user interface, with an interoperability layer, to run on multiple data warehouses, specifically the i2b2, tranSMART and medco data warehouses.
-- lay the basis for allowing multiple specialized data sources to connect to one user interface, allowing the user to combine information from patients spread over them.
-
+% todo: enough?
 
 \section{Solution Requirements}
 \label{sec:requirements}
 
 % requirements list
-We translate the objectives stated in~\ref{sec:problem} into the following requirements.
+We translate the aforementioned objectives into the following requirements.
 Our solution must:
 
 \begin{enumerate}
-    % the systems ARE a requirement
-    \item be compatible with the two major open-source clinical research systems: tranSMART (v17.1) and i2b2  % todo: and do what exactly? cohort exploraiton blabla, goal is not just to be compatible
-    \item enable sharing of sensitive data in a privacy-preserving way: with MedCo
+    \item offer a modern front end for clinical research platforms that allows cohort exploration, based on criterion:
+    \begin{enumerate}
+        \item inclusion and exclusion
+        \item presence of an ontology query term
+        \item value constraints: categorical, numerical and time
+    \end{enumerate}
+    \item be compatible with the two major open-source clinical research systems: tranSMART (v17.1) and i2b2
+    \item enable sharing of sensitive data in a privacy-preserving way with MedCo
+    \item be easily extensible for future support of additional platforms
     \item be free of technical constraint against its use, by:
     \begin{enumerate}
         \item being easy to deploy, even in existing environments
-        \item not degrading the experience of existing systems
+        \item not degrading the user experience in existing systems
         \item being secure
         \item being open-source
         \item having a practical runtime
-        \item being future-proof
     \end{enumerate}
 \end{enumerate}
 
-% why requirements are fulfilling objectives
-
-% reasons for open-source:
-% In the open-source spirit, existing technologies and standard. Maximizing the value of the work. 
-% Integrating with existing systems.
-
-from ward:
-% ======== objectives into technical requirements
-Interoperability layer
-Medco, tranSMART, i2b2
-Support for multiple data sources (in the basis)
-
-\section{Solution Overview}
-
-\begin{itemize}
-    \item big picture of the whole system in short
-    \item how it helps solve the 2 objectives in short
-\end{itemize}
-
-
-\section{Contributions}
-
-\begin{itemize}
-    \item list of contributions made
-    \item evaluation shows how the contributions are successful
-\end{itemize}
-
-% - what we do is a step in the direction of blabla
-% convergence of blabla
 
 \section{Outline}
-TBD
+
+First we offer background information necessary to understand this paper and review the related work in section~\ref{sec:bg-relwork}.
+We then show the architecture of our solution and its designing process in  section~\ref{sec:sysarchitecture}.
+In sections~\ref{sec:interoplayer} and~\ref{sec:medco} we detail the design and implementation of the solution, and evaluate its fulfillment of the requirements and performance in section~\ref{sec:evaluation}.
+We finally conclude and expose propose future work in section~\ref{sec:conclusion}.

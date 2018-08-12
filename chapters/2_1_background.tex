@@ -1,0 +1,185 @@
+\chapter{Background \& Related Work}
+\label{sec:bg-relwork}
+
+\section{Background}
+This section offers some important background information providing context to what is presented in the later sections. 
+
+\subsection{i2b2}
+\label{sec:bg-i2b2}
+
+% features
+I2b2 is a clinical research platform used for cohort exploration.
+The server is written in Java and using Apache Axis2~\cite{todo} for its web services, it exposes an XML API to interact with it.
+Its source code is organized by \emph{cells} in a \emph{hive}.
+The \emph{CRC} (Clinical Research Chart) cell is the data repository containing the patients data, the \emph{PM} (Project Management) cell contains all information about users and metadata about the data in the CRC, the \emph{ONT} (Ontology) contains the ontology with which the data is structured.
+
+% db
+It stores patients data in this relational database encoded in a star schema.
+This schema has a central table \emph{observation fact} that records any kind of observation about a patient.
+This table stores a unique set of references to its satellite dimension tables, each containing information about the \emph{patient}, the \emph{ontology concept} observed, the \emph{encounter} that led to the observation and the \emph{provider} that did it.
+The data is structured around standard ontologies such as \emph{ICD9}~\cite{todo}.
+
+% client
+I2b2 has two official clients.
+First the \emph{webclient} is a Javascript application running is web browsers and built around the \emph{yui}~\cite{todo} framework.
+Second is the \emph{workbench}, a Java desktop application doing the same thing and a bit more.
+Both communicate with the server with the i2b2 XML API.
+
+\subsection{tranSMART}
+
+% features
+TranSMART is also a clinical research platform, offering cohort exploration but also more advanced analysis on these features.
+It is written mostly in Groovy~\cite{todo}, which runs in the Java Virtual Machine, and offers a modern JSON API in its latest version 17.1.
+
+% db
+The core data schema is the same as i2b2 with two additional dimension tables: \emph{studies} which represent a medical study from which data has been obtained, and \emph{trial visits} recording progression through time of a study.
+Its data is structured around the \emph{studies}, which each have their own ontologies.
+Some ontology concepts can be shared among studies and can be used as \emph{cross-study concepts}.
+
+% client
+Its official client is a web application rendered in Java on the server-side called \emph{tranSMARTApp}.
+
+
+\subsection{PIC-SURE API}
+\label{sec:bg-picsure}
+
+% intro
+The PIC-SURE (Patient-centered Information Commons: Standardized Unification of Research Elements)~\cite{PIC-SURE} API is a generic API with a SQL-like syntax that aims to query different patients-centered data warehouses.
+
+% resource, clauses
+PIC-SURE is \emph{resource}-based: each data source (e.g. i2b2) is considered a resource.
+To query these resources, the user of the API uses \emph{clauses} submitted to the API \emph{Query Service}.
+Four types of clauses are supported: \emph{select}, \emph{where}, \emph{process} and \emph{join}.
+Here we focus only on \emph{where} clauses, which are the only ones used with i2b2.
+
+% where 
+The \emph{where} clause is used to specified constraints on the queried data.
+The resource declares the \emph{predicates} that its \emph{where} clauses support.
+To give input to the predicates, the predicates declare \emph{fields}.
+Each of those fields take a value as input, whose type is declared.
+Example of a \emph{where clause}:
+\begin{verbatim}
+"where": [ {
+    "field": {
+        "pui": "/resource/study/Age/",
+        "dataType": "INTEGER"
+    },
+    "predicate": "CONSTRAIN_VALUE",
+    "fields": {
+        "OPERATOR": "GT",
+        "CONSTRAINT": "20"
+    }
+} ]
+\end{verbatim}
+
+% tree
+In order to construct queries, the resources expose a tree of query terms uniquely identified by a path, through the API \emph{Resource Service}.
+Each of those query terms, if they are queryable, declare a data type.
+Each of the predicates used for the \emph{where} clauses also declare one or more supported data types: this is the mechanism used to know which query terms support which predicates.
+In order to link the tree nodes together, the resources declare what kind of relationships between nodes exist.
+For example if the tree supports the relationship \verb|CHILD|, a client can request all the children of a certain node. 
+
+
+\subsubsection*{IRCT}
+
+The official implementation of the PIC-SURE API is called Inter Resource Communication Tool (IRCT), and is the combination of four different components that are open-source and available on~\cite{IRCT-github}. 
+They are implemented in Java and use standard technologies: web application archive (WAR)~\cite{wiki:war} for deployment, Hibernate~\cite{wiki:hibernate} for data storage.
+First the Communication Layer (IRCT-CL) implements the RESTful PIC-SURE API. 
+The core component is the Application Programming Interface (IRCT-API), it handles the execution of queries and processing of results.
+An instance can be extended using the IRCT Extension (IRCT-EXT) that provides hooks and additional features without having to modify the core code.
+Finally the Resource Interface (IRCT-RI) connects to the different resources through connectors.
+Resources are registered and defined in the database.
+Their definition include all the predicates, operations, relationships, etc. they support.
+
+
+\subsection{Glowing Bear}
+
+% intro & features
+Glowing Bear is a front end web application built using Angular as an new user interface to tranSMART 17.1.
+Angular is a Typescript~\cite{todo} framework to develop web applications.
+Typescript is a language that when compiled produce javascript code to be run inside a web browser.
+Glowing Bear offer basic cohort exploration features, but also advanced analytic features or data export.
+
+% services, components
+Its source code is organized in mainly Angular services and components.
+Services are singleton objects that handle logic related to data.
+Among others the notable services in Glowing Bear are the \emph{Tree Node Service}, handling data relate to the tree of query terms or the \emph{Resource Service}, handling communication with the back end.
+Components contain the logic of representing the data, and associate an object that contain the component logic, and a HTML template that displays it.
+
+
+\subsection{OpenID Connect}
+
+% todo: claim, jwt
+% todo: backgorund about oidc (client id, etc.)
+% todo: list of requirements from the standards
+
+
+OpenID Connect is a protocol enabling authentication and authorization using a third-party implementing the server-side of the protocol.
+It offers several types of negotiations (called \emph{flow}) between the server and client(s), but they all end up with an access token used by a user to access a resource.
+This token is standardized as a JSON Web Token (JWT)~\cite{todo}.
+
+\subsubsection*{JSON Web Token}
+% todo: cite rsa paper and sha and jwt and oidc
+
+A JWT is three distinct base64-encoded values separated by a dot: two JSON objects and a signature.
+The first is the header, which contains metadata about the JWT, such as the signing algorithm used and the identifier of the key used to perform the signing.
+Example:
+
+\begin{samepage}
+\begin{verbatim}
+{
+  "alg": "RS256",
+  "typ": "JWT",
+  "kid": "eTFrdyrNxXLNHI7p0Ywybc7z1SBHTEcqWcMTybtdvQY"
+}
+\end{verbatim}
+\end{samepage}
+
+The second is the payload of the JWT, and contains the identity of the authenticated user, its authorizations, and can contain any kind of custom fields set up by the administrator of the OIDC server.
+Other standard fields include expiration time, client identifier, token issuer, etc.
+Those data are called the JWT claims.
+Example:
+
+
+\begin{verbatim}
+{
+  "jti": "6fd4f480-05ce-471f-a4ef-f35cb6a8e0d0",
+  "exp": 1523454086,
+  "nbf": 0,
+  "iat": 1523453186,
+  "iss": "http://localhost:8081/auth/realms/master",
+  "aud": "glowing-bear",
+  "sub": "df110f80-fa32-4174-970d-e42a7b24ae9f",
+  "typ": "Bearer",
+  "azp": "glowing-bear",
+  "nonce": "N0.28573339803406971523453198656",
+  "auth_time": 1523453186,
+  "session_state": "74cd6393-9d24-4140-a87a-9e557f45499b",
+  "acr": "1",
+  "resource_access": {
+    "account": {
+      "roles": [
+        "role1",
+        "role2"
+      ]
+    }
+  },
+  "preferred_username": "test",
+  "email": "test@test.com"
+}
+\end{verbatim}
+
+The last value is a signature generated by the OIDC server that serves two purposes: verify that the issuer was indeed the OIDC server, and protect the integrity of the token.
+Several algorithm can be used to generate this signature, here we use the algorithm \emph{RS256}, i.e. the encryption of a \emph{SHA256} hash using the asymmetric cryptosystem RSA.
+
+
+\subsection{MedCo}
+\label{sec:bg-medco}
+
+MedCo is a system of federated clinical sites sharing data together in a secure and privacy-preserving way.
+Its security relies on a collective authority~\cite{todo} formed by all the MedCo nodes.
+It uses an homomorphic cryptosystem, which means that some operation on encrypted data is possible. 
+Each of the node has a public and private key, and by assembling all the public keys together the public key of the collective authority is generated.
+The corresponding private does not exist, thus all operations requiring the private keys are distributed across all nodes using specific protocols.
+
+For more detailed information about MedCo and its underlying technologies, please refer to~\cite{todo}.
