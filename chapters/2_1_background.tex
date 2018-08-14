@@ -9,7 +9,7 @@ This section offers some important background information providing context to w
 
 % features
 I2b2 is a clinical research platform used for cohort exploration.
-The server is written in Java and using Apache Axis2~\cite{todo} for its web services, it exposes an XML API to interact with it.
+The server is written in Java and using Apache Axis2~\cite{axis2} for its web services, it exposes an XML API to interact with it.
 Its source code is organized by \emph{cells} in a \emph{hive}.
 The \emph{CRC} (Clinical Research Chart) cell is the data repository containing the patients data, the \emph{PM} (Project Management) cell contains all information about users and metadata about the data in the CRC, the \emph{ONT} (Ontology) contains the ontology with which the data is structured.
 
@@ -17,11 +17,11 @@ The \emph{CRC} (Clinical Research Chart) cell is the data repository containing 
 It stores patients data in this relational database encoded in a star schema.
 This schema has a central table \emph{observation fact} that records any kind of observation about a patient.
 This table stores a unique set of references to its satellite dimension tables, each containing information about the \emph{patient}, the \emph{ontology concept} observed, the \emph{encounter} that led to the observation and the \emph{provider} that did it.
-The data is structured around standard ontologies such as \emph{ICD9}~\cite{todo}.
+The data is structured around standard ontologies such as \emph{ICD-9}~\cite{nahler2009icd}.
 
 % client
 I2b2 has two official clients.
-First the \emph{webclient} is a Javascript application running is web browsers and built around the \emph{yui}~\cite{todo} framework.
+First the \emph{webclient} is a Javascript application running is web browsers and built around the \emph{yui}~\cite{yui} framework.
 Second is the \emph{workbench}, a Java desktop application doing the same thing and a bit more.
 Both communicate with the server with the i2b2 XML API.
 
@@ -29,7 +29,7 @@ Both communicate with the server with the i2b2 XML API.
 
 % features
 TranSMART is also a clinical research platform, offering cohort exploration but also more advanced analysis on these features.
-It is written mostly in Groovy~\cite{todo}, which runs in the Java Virtual Machine, and offers a modern JSON API in its latest version 17.1.
+It is written mostly in Groovy~\cite{groovy}, which runs in the Java Virtual Machine, and offers a modern JSON API in its latest version 17.1.
 
 % db
 The core data schema is the same as i2b2 with two additional dimension tables: \emph{studies} which represent a medical study from which data has been obtained, and \emph{trial visits} recording progression through time of a study.
@@ -44,7 +44,7 @@ Its official client is a web application rendered in Java on the server-side cal
 \label{sec:bg-picsure}
 
 % intro
-The PIC-SURE (Patient-centered Information Commons: Standardized Unification of Research Elements)~\cite{PIC-SURE} API is a generic API with a SQL-like syntax that aims to query different patients-centered data warehouses.
+The PIC-SURE (Patient-centered Information Commons: Standardized Unification of Research Elements)~\cite{bd2k}~\cite{PIC-SURE}~\cite{PIC-SURE-API} API is a generic API with a SQL-like syntax that aims to query different patients-centered data warehouses.
 
 % resource, clauses
 PIC-SURE is \emph{resource}-based: each data source (e.g. i2b2) is considered a resource.
@@ -82,7 +82,7 @@ For example if the tree supports the relationship \verb|CHILD|, a client can req
 
 \subsubsection*{IRCT}
 
-The official implementation of the PIC-SURE API is called Inter Resource Communication Tool (IRCT), and is the combination of four different components that are open-source and available on~\cite{IRCT-github}. 
+The official implementation of the PIC-SURE API is called Inter Resource Communication Tool (IRCT), and is the combination of four different components that are open-source and available at~\cite{github:IRCT}. 
 They are implemented in Java and use standard technologies: web application archive (WAR)~\cite{wiki:war} for deployment, Hibernate~\cite{wiki:hibernate} for data storage.
 First the Communication Layer (IRCT-CL) implements the RESTful PIC-SURE API. 
 The core component is the Application Programming Interface (IRCT-API), it handles the execution of queries and processing of results.
@@ -96,7 +96,7 @@ Their definition include all the predicates, operations, relationships, etc. the
 
 % intro & features
 Glowing Bear is a front end web application built using Angular as an new user interface to tranSMART 17.1.
-Angular is a Typescript~\cite{todo} framework to develop web applications.
+Angular is a Typescript~\cite{bierman2014understanding} framework to develop web applications.
 Typescript is a language that when compiled produce javascript code to be run inside a web browser.
 Glowing Bear offer basic cohort exploration features, but also advanced analytic features or data export.
 
@@ -108,6 +108,7 @@ Components contain the logic of representing the data, and associate an object t
 
 
 \subsection{OpenID Connect}
+\label{sec:bg-oidc}
 
 % todo: claim, jwt
 % todo: backgorund about oidc (client id, etc.)
@@ -116,7 +117,7 @@ Components contain the logic of representing the data, and associate an object t
 
 OpenID Connect is a protocol enabling authentication and authorization using a third-party implementing the server-side of the protocol.
 It offers several types of negotiations (called \emph{flow}) between the server and client(s), but they all end up with an access token used by a user to access a resource.
-This token is standardized as a JSON Web Token (JWT)~\cite{todo}.
+This token is standardized as a JSON Web Token (JWT)~\cite{rfc:jwt}.
 
 \subsubsection*{JSON Web Token}
 % todo: cite rsa paper and sha and jwt and oidc
@@ -177,9 +178,9 @@ Several algorithm can be used to generate this signature, here we use the algori
 \label{sec:bg-medco}
 
 MedCo is a system of federated clinical sites sharing data together in a secure and privacy-preserving way.
-Its security relies on a collective authority~\cite{todo} formed by all the MedCo nodes.
+Its security relies on a collective authority~\cite{syta2015certificate} formed by all the MedCo nodes.
 It uses an homomorphic cryptosystem, which means that some operation on encrypted data is possible. 
 Each of the node has a public and private key, and by assembling all the public keys together the public key of the collective authority is generated.
 The corresponding private does not exist, thus all operations requiring the private keys are distributed across all nodes using specific protocols.
 
-For more detailed information about MedCo and its underlying technologies, please refer to~\cite{todo}.
+For more detailed information about MedCo and its underlying technologies, please refer to~\cite{medco}.

@@ -4,62 +4,75 @@
 % query term type
 % query: constraints
 % data sources (no pic-sure resource)
-% "paper" rather than thesis or document
+% "thesis" rather than paper or document
 % ============================
 
-% flow of the paper:
-% \begin{itemize}
-%     \item motivation exposes problems
-%     \item problems to be solved lead to objectives
-%     \item objectives translated into technical requirements
-%     \item technical requirements met with architecture solution
-%     \item solution designed and implemented
-%     \item evaluation of how implementation meet requirements
-% \end{itemize}
+% todo about values: better to not say
 
 % wording of everything?
 
 % motivation / problem
 \chapter{Introduction}
-% todo: add citation in here
-% 1: https://www.karger.com/Article/FullText/481682 : cite
 
 % precision medicine what it needs
-Realization of the promise of precision medicine requires large and diversified clinical and genomic data sets for researchers to exploit~\cite{todo1}.
-Existing technical solutions to exploit those data sets exist and are widely used, the two main open-source players being i2b2 and tranSMART.
+To realize the promise of precision medicine, researchers need to freely explore large and diverse clinical and genomic data~\cite{scollen2017data}.
+There exist several widely used technical solutions to explore those data sets, the two main open-source players being i2b2~\cite{murphy2010serving} and tranSMART~\cite{scheufele2014transmart}.
 
 % data scattered in systems
-However those clinical research platforms are generally deployed at single clinical sites, or at best a group of them, hosting their own data.
-This leads to the presence of multiple and fragmented systems at different locations all over the world, a situation that is not close to change as a lot of effort and money has been invested in those by clinical sites on often tight budgets.
-Centralizing those systems is not feasible either because of the substantial efforts, thus cost, of doing so, on top of the serious privacy concerns this implies.
+However those clinical research platforms are generally deployed at single or at a group of clinical sites, each hosting their own data.
+This leads to a situation where multiple fragmented systems exist at different locations all over the world. Since clinical sites have invested a lot of effort and money in those systems, this situation will not change anytime soon.
 Due to this scattered data, researchers find themselves limited by the amount of data that their own clinical sites produce.
 
+% data sharing -> centralization nope
+Straightforwardly data sharing between clinical sites is a solution to this problem.
+There are two ways to approach data sharing, first is through centralization and second is through federation.
+Centralization is not considered because of the substantial efforts, thus cost, of doing so, in addition to the serious privacy concerns this implies.
+
 % data sharing
-A straightforward solution to this problem is to share the data between the clinical sites, however this faces two challenges.
-First challenge is technical, the different clinical research platforms are not interoperable together.
-Second is legal and ethic, as medical data are highly sensitive information about individuals.
-Those are protected by strict regulations such as HIPAA~\cite{todo} in the USA or GDPR~\cite{todo} in the EU, and data leaks could be devastating to the concerned persons, thus privacy and security guarantees are capital.
+By elimination, only the second approach, data sharing through federation, appears feasible.
+It however is challenging for two reasons.
+The first challenge is of technical nature; there is no interoperability between the different clinical research platforms.
+The second challenge is legal and ethical, as medical data are highly sensitive information about individuals, which are protected by strict regulations such as HIPAA~\cite{centers2003hipaa} in the USA or GDPR~\cite{gdpr} in the EU.
+Therefore providing strong privacy and security guarantees is absolutely crucial.
 
 % solution to this / contribution
-In this paper we show a system we build that takes a step towards the technical convergence of those systems by providing an interoperability layer for i2b2 and tranSMART, exploitable by a unique front end, Glowing Bear.
-Moreover this interoperability layer offers as well the ability to securely share medical data between clinical sites using the privacy-preserving system MedCo.
+This thesis proposes a system that takes a step towards the technical convergence of those systems by providing an interoperability layer for i2b2 and tranSMART, exploitable by a unique front end, Glowing Bear~\cite{gb}.
+In addition, this interoperability layer offers the ability to securely share medical data between clinical sites using the privacy-preserving system MedCo~\cite{medco}.
 
 
 \section{Objectives}
 
 % clinical research systems compat
-We aim to provide a technical solution to enable researchers to explore data from the clinical research platforms \emph{i2b2} and \emph{tranSMART} from a common front end.
+We aim to provide a technical solution to enable researchers to do \emph{cohort exploration}, i.e. explore patient medical data, from the clinical research platforms \emph{i2b2} and \emph{tranSMART} from a common front end.
 In order to expand further the pool of potential data accessible through this front end, we also aim to support \emph{MedCo} which provides strong privacy and security guarantees.
 Those systems can be hosted at arbitrary physical locations.
-This technical solution should also lay the basis to be later extended to other systems, and allow combining patients between different systems.
+We do not seek to be able to combine patient data from different data sources, as it is a whole different class of problem.
+Which means we restrict ourselves to cohort exploration using one clinical research platform at a time.
+We do aim however to lay the technical ground to allow that in the future with further development, by building an extendable system.
 
 % front end features
-The front end should offer basic cohort exploration features at least, i.e. creating patient set based on some criterion and get the set size.
-Both inclusion and exclusion criterion should be supported.
-Criterion should include basic presence of some query terms, and also based on categorical or numerical values.
+For our front end, we target basic patient cohort exploration features, through queries resulting in a patient set size.
+Queries should support inclusion and exclusion criteria, themselves composed of basic presence of a term in the database, or using some categorical and numerical values.
 
-% todo: enough?
+% example 
+An example of such a query supported by our system would be querying for
+\emph{the number of patients aged between 17 and 30, diagnosed with cutaneous melanoma in the last 5 years, excluding patients that had a chemotherapy}
+With the specific criteria supported by our system, this would translate to support the following query:
+\begin{itemize}
+    \item \emph{Inclusion criteria}
+    \begin{itemize}
+        \item Age: $\geq 17$, $\leq 30$
+        \item Cutaneous Melanoma diagnosis (date constraint: in the last 5 years)  
+    \end{itemize}
+    
+    \item \emph{Exclusion criteria}
+    \begin{itemize}
+        \item Chemotherapy
+    \end{itemize}
+\end{itemize}
 
+
+\newpage
 \section{Solution Requirements}
 \label{sec:requirements}
 
@@ -68,7 +81,7 @@ We translate the aforementioned objectives into the following requirements.
 Our solution must:
 
 \begin{enumerate}
-    \item offer a modern front end for clinical research platforms that allows cohort exploration, based on criterion:
+    \item offer a modern web-based front end for clinical research platforms that allows cohort exploration, possibly based on the following criteria:
     \begin{enumerate}
         \item inclusion and exclusion
         \item presence of an ontology query term
@@ -77,20 +90,21 @@ Our solution must:
     \item be compatible with the two major open-source clinical research systems: tranSMART (v17.1) and i2b2
     \item enable sharing of sensitive data in a privacy-preserving way with MedCo
     \item be easily extensible for future support of additional platforms
-    \item be free of technical constraint against its use, by:
+    \item alleviate technical hindrances against its use, by:
     \begin{enumerate}
         \item being easy to deploy, even in existing environments
         \item not degrading the user experience in existing systems
-        \item being secure
+        \item enforcing secure authentication
         \item being open-source
         \item having a practical runtime
     \end{enumerate}
 \end{enumerate}
 
 
+
 \section{Outline}
 
-First we offer background information necessary to understand this paper and review the related work in section~\ref{sec:bg-relwork}.
+First we offer background information necessary to understand this thesis and review the related work in section~\ref{sec:bg-relwork}.
 We then show the architecture of our solution and its designing process in  section~\ref{sec:sysarchitecture}.
-In sections~\ref{sec:interoplayer} and~\ref{sec:medco} we detail the design and implementation of the solution, and evaluate its fulfillment of the requirements and performance in section~\ref{sec:evaluation}.
-We finally conclude and expose propose future work in section~\ref{sec:conclusion}.
+In sections~\ref{sec:interoplayer} and~\ref{sec:medco} we detail the design and implementation of the solution, broken down in two objectives: creating an interoperability layer, and building on it to integrate a privacy-preserving cohort explorer.
+In section~\ref{sec:evaluation} we show that our solution fulfills the aforementioned requirements, and we finally conclude and propose future work in section~\ref{sec:conclusion}.

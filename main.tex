@@ -5,7 +5,6 @@
 \newcommand{\be }{\begin{itemize}\maketitle}
 \newcommand{\en }{\end{itemize}}
 
-\addbibresource{bibliography/bibliography.bib}
 \addbibresource{bibliography/github.bib}
 \addbibresource{bibliography/online.bib}
 \addbibresource{bibliography/papers.bib}
@@ -35,10 +34,6 @@
 \newpage
 \tableofcontents
 
-% ---- acknowledgements ----
-\newpage
-\input{acknowledgements.tex}
-
 % ---- content ----
 \newpage
 \input{chapters/1_intro.tex}
@@ -52,33 +47,16 @@
 \input{chapters/6_eval.tex}
 \input{chapters/7_ccl.tex}
 
-% ---- appendices ----
-\newpage
-\appendix
-\input{appendices/A_resources.tex}
-% todo: acronyms in appendix
-\input{appendices/B_test_deployment_infra.tex}
-\input{appendices/C_apis_examples.tex}
 
 % ---- bibliography ----
 \newpage
 \printbibliography
 
+% ---- appendices ----
+\newpage
+\appendix
+\input{appendices/A_resources.tex}
+\input{appendices/B_docker.tex}
+
+
 \end{document}
-
-% use recursive structure: 
-% abstract
-% - section
-% -- abstract
-% -- topic sentence + paragraph body
-% -- topic sentence + paragraph body
-% -- ...
-% - section
-% -- abstract
-% -- topic sentence + paragraph body
-% -- topic sentence + paragraph body
-% -- ...
-% - ...
-
-% statement = fact (citations) + result (formal proof or measurement)
-% -> no opinion

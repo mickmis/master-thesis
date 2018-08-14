@@ -1,69 +1,82 @@
 \chapter{System Evaluation}
 \label{sec:evaluation}
 
-% todo: this section should show how the requirements are met
+In this section we show how the requirements enumerated section~\ref{sec:requirements} are fulfilled.
 
-\begin{itemize}
-    \item goals: meet the requirements
-\end{itemize}
+\begin{enumerate}
+    \item \emph{offer a modern web-based front end for clinical research platforms that allows cohort exploration, based on several types of criteria} \\
+    As a first goal we set out to make sure we would use a modern front end, that would allow for cohort exploration. The chosen front end, Glowing Bear, is a user-friendly web application built using modern technologies (Typescript and Angular).
+    It offers cohort exploration based on the targeted criteria: inclusion and exclusion, presence of ontology query term, and constraint based on their value.
+    
+    \item \emph{be compatible with the two major open-source clinical research systems: tranSMART (v17.1) and i2b2} \\
+    It supports both targeted platforms i2b2 and tranSMART 17.1.
+    It has the acceptable limitation that queries cannot combine terms from different data sources.
 
-\section{Experiments}
-% todo: overhead compared to orig GB
+    \item \emph{enable sharing of sensitive data in a privacy-preserving way with MedCo} \\
+    Its support of MedCo enables users access to sensitive data that would not be shared without the strong privacy and security guarantees offered.
 
-% - questions to be answered: overhead of this new implementation + security of the whole system
-% - exp. setup
-% - experiments
-% - summary
+    \item \emph{be easily extensible for future support of additional platforms} \\
+    Integration of the PIC-SURE API through IRCT makes our solution offer a framework for future developers to easily implement support for additional systems, as proposed in the future work section~\ref{sec:futurework}.
+    Moreover it makes use of implementation-independent RESTful~\cite{rest} standard APIs.
 
-\begin{itemize}
-    \item i2b2 query times vs picsure+i2b2 query times (overhead)
-    \item medco query times with pic-sure vs previously with shrine (refer to the paper)
-    \item experimental setup & methodology
-\end{itemize}
-
-% put that or not? see if there is sth to say
-\section{Security Analysis}
-\begin{itemize}
-    \item security analysis
-    \item threat model
-\end{itemize}
-
-% - : i2b2 pws in clear in xml changed 
-% where are other problems?
-% how to do an analysis: cehck out owasp?
-% threats models: https://www.owasp.org/index.php/Testing_Guide_Introduction#Threat_Modeling
-% https://www.owasp.org/images/1/19/OTGv4.pdf ?
-
-% (incl. medco threat model in there)
-% have zones for data and such
-% including communications, systems
-
-% authorizations
-
-% need for https comms (proxied here)
-
-
-\section{Requirements Fulfillment}
-\begin{itemize}
-    \item take list of requirements and explain how they are met
-\end{itemize}
-
-\section{Discussion}
-\begin{itemize}
-    \item limitations
-\end{itemize}
+    \item \emph{alleviate technical hindrances against its use} \\
+    During the design and implementation phases of our solution, many considerations have been taken into account to alleviate technical constraints around its usage.
+    \begin{enumerate}
+        \item \emph{being easy to deploy, even in existing environments} \\
+        Docker~\cite{merkel2014docker} is extensively used to both facilitate development and deployment as detailed in appendix~\ref{sec:docker}.
+        A demo version of the whole system can be brought up with a single command.
+        
+        \item \emph{not degrading the user experience in existing systems} \\
+        Modifications to existing code bases were done in a way that the existing features are not affected, this includes Glowing Bear, IRCT, i2b2, and MedCo.
+        
+        \item \emph{enforcing secure authentication} \\
+        Implementation of the support for OpenID Connect, a modern standard for secure authentication, was done in all the components of our system.
+        It was implemented from scratch for Glowing Bear, i2b2 and MedCo, and the existing implementation of IRCT was modified to fit our use-case.
+        
+        \item \emph{being open-source} \\
+        Our system is open-source, not just by the licenses used, but also by our contributions to the community.
+        All the modifications made to the existing i2b2, IRCT, Glowing Bear and MedCo were the subject of \emph{pull requests} on their original repositories, so that they can be considered and potentially mainlined into the original repositories.
+        
+        \item \emph{having a practical runtime} \\
+        Query times are kept practical.
+        When compared to the query times of the original systems, the overhead is minimal.
+        In tranSMART's case it stays the same as the Glowing Bear implementation remains.
+        In the i2b2 case there is the overhead of using IRCT, however this overhead is minimal and close to a constant as the only processing is the translation of the query. 
+        This translation process is close to a simple mapping and is in the order of a dozen milliseconds (not including I/O).
+        In the MedCo case the time is actually reduced, as the query do not pass through SHRINE and is sent directly to the MedCo nodes.
+        
+        
+    \end{enumerate}
 
 
+% part to say it will be fine with bigger query
+% assumed qd, irct is kn, this gives n
 
-% ---
-% refering to soft eng requirements:
+% outside of translation, simple proxying
 
-% % using web apis \ todo: elaborate rest, rephrase
-% While these systems may differ, most of them can be queried through RESTful Web APIs.
-% Web APIs allows to interact with systems in a platform and technology independent way, by using HTTP calls \cite{todo}.
-% RESTful APIs are interfaces that enforce a certain set of constraint (see \cite{todo}) that when used are inducing a number of properties that make their use and programming easier.
-% Using RESTful Web APIs contributes to make the system more open and extensible, thus helps meeting the requirements.
 
-% norm for interopeble systems, operating system and implement taion indepednent 
+% % practical runtime
+% Finally the query times are kept practical for users, i.e. the overhead compared to the original systems is kept minimal.
+% This overhead is kept constant as the total runtime depends mainly on the time the clinical research systems take to answer to the query.
+% The overhead is $O(c)$, $c=f(q)$ being linear to the number of query $f$ linear and $O(c) + O(a) = O(c + a) = O(c)$.
+% For d fixed the query time is equivalent to .
 
-% and also oidc
+
+% We make the hypothesis that the clinical research systems is 
+% Assuming that the query times is function of $O(q)$, i.e. linear to the number of query terms, 
+
+% Queries are constrsucted in  a way 
+% it is extrapolated from exprimental measurements of experimentally determined by<medcopaper> that i2b2 query times are a linear function of the number of query terms $n$ times a factor proportional to the database size $d$: $O(nd)$.
+% o(nd +n), o(n(d+1)) = o(n)
+
+
+\end{enumerate}
+
+
+% if time allows, measurements possibilities:
+% - i2b2 query times vs picsure+i2b2 query times (overhead)
+% - medco query times with pic-sure vs previously with shrine (refer to the paper)
+% - compare gb on public i2b2 with i2b2 webclient public demo
+% - irct: measure time it takes just this
+ 
+ 

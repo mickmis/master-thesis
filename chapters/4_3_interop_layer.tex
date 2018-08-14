@@ -5,13 +5,13 @@
 \label{sec:interoplayer-picsure}
 
 % intro
-On the back end side, to provide an interoperability layer with i2b2 and later more systems, we use IRCT~\cite{todo} (Inter-Resource Communication Tool).
+On the back end side, to provide an interoperability layer with i2b2 and later more systems, we use IRCT~\cite{github:IRCT} (Inter-Resource Communication Tool).
 IRCT implements the PIC-SURE API, which is used by Glowing Bear.
-Behind that it can support a multitude of systems, but we focus here on the support of i2b2.
+Besides that it can support a multitude of systems, but we focus here on the support of i2b2.
 
 % overview
 This section covers the process of API translation happening in IRCT, from the PIC-SURE API to the i2b2 API.
-We go over the full query process: browsing through query terms, executing a query and getting back its results.
+We go over the full query execution flow: browsing through query terms, executing a query and getting back its results.
 
 
 \subsection{Query Terms Tree}
@@ -19,7 +19,7 @@ We go over the full query process: browsing through query terms, executing a que
 \subsubsection{Tree Structure and Nodes Relationships}
 
 % tree structure and root
-Query terms in are exposed through a tree to client systems.
+Query terms are exposed through a tree to client systems.
 Each node in the tree is uniquely identified by a path, with at its root the different data sources available in the instance.
 When a client requests the children of the root path \verb|/|, the nodes returned correspond to the configured data sources in the instance.
 Below this root level, the tree is data source implementation-dependent.
@@ -29,7 +29,7 @@ We review here the tree of an i2b2 data source.
 The data sources tree structure is based on \emph{relationships} between nodes.
 The most obvious relationship is the parent / child / sibling: based on a tree node, a client can requests its \emph{children}, \emph{parent} or \emph{sibling} nodes.
 This allows the client system to browse the tree in an iterative fashion, which is what happens with i2b2.
-I2b2 itself already exposes a tree, so the mapping of the tree is one-to-one below a certain level:
+i2b2 itself already exposes a tree, so the mapping of the tree is one-to-one below a certain level:
 \begin{verbatim}
     /<data source name>/<i2b2 project name>/<i2b2 root node (category)/<i2b2 tree>/
 \end{verbatim}
@@ -38,15 +38,15 @@ Note that it is not possible to use query terms coming from different data sourc
 % aggregate
 On top of the previously mentioned standard relationships, a data source implementation can declare additional ones, which can be seen as adding a dimension to the tree.
 We exploit here this possibility in order to expose aggregate data about the nodes.
-Here we add an \emph{aggregate} relationship to the \emph{categorical} nodes, which is exposed the client system.
-As such the client system knows about this possibility, and can request the aggregate values of node, in this specific case the values this categorical query term can take.
+Here we add an \emph{aggregate} relationship to the \emph{categorical} nodes, which is exposed to the client system.
+As such, the client system knows about this possibility, and can request the aggregate values of a node, in this specific case the values this categorical query term can take.
 
 % list of relationships supported by i2b2
 The relationships exposed by an i2b2 data source tree are:
 \begin{itemize}
     \item \emph{Child}: returns the children node 
-    \item \emph{Modifier}: returns the modifiers associated to the requested tree node
-    \item \emph{Aggregate}: returns the aggregate data of the tree node (example: values of a categorical query term)
+    \item \emph{Modifier}: returns the modifiers associated with the requested tree node
+    \item \emph{Aggregate}: returns the aggregate data of the tree node (such as the values of a categorical query term)
 \end{itemize}
 
 
@@ -56,7 +56,7 @@ The relationships exposed by an i2b2 data source tree are:
 To determine how tree nodes can be used as query terms, we do the following.
 Each node of the tree can declare a type. 
 If the node does not have a type, it is not queryable and is a simple "container" node.
-When the node has a type it can be use used as a query term with some predicates, and each predicate declares in the data source implementation which node types it supports.
+When the node has a type it can be used as a query term with some predicates, and each predicate declares in the data source implementation which node types it supports.
 So we need to 
 \begin{enumerate*}
     \item translate correctly the i2b2 node types into PIC-SURE node types
@@ -82,12 +82,12 @@ With the i2b2 implementation, we do not use the primitive types, only the ones w
 % data type
 Browsing the i2b2 ontology tree is already implemented in IRCT, we enhance it with some features that we need.
 The specific i2b2 data types listed before are implemented, and the extraction of those types from the i2b2 ontology tree as well.
-We also implement adding the relationships \emph{child} and \emph{aggregate} to the tree nodes if they need to.
+We also implement adding to the tree nodes the relationships \emph{child} if the node has children, and \emph{aggregate} if it has aggregate values available.
 The i2b2 data source definition is modified accordingly.
 % todo: modifier?
 
 % aggregate
-Support for the \emph{aggregate} is implemented by making an ontology request to i2b2, and parsing the XML metadata associated to the node that contain this information, to embed the categorical values in the tree node.
+Support for the \emph{aggregate} is implemented by making an ontology request to i2b2, and parsing the XML metadata associated with the node that contain this information, to embed the categorical values in the tree node.
 
 
 \subsection{Query Translation}
@@ -101,7 +101,7 @@ Here we show the process of translating a query from the PIC-SURE API format to 
 Recall that all the query terms are represented in the PIC-SURE API by a \emph{where clause}.
 In the i2b2 terminology, a query term is an \emph{item}, and a group of query terms linked by an \verb|OR| is a \emph{panel}.
 The \emph{panels} are linked together with an \verb|AND|.
-The translation process from the PIC-SURE to the i2b2 API iterates over all the \emph{where clauses}, translate them into an i2b2 \emph{item}, and assemble those \emph{items} appropriately into \emph{panels} according to the PIC-SURE logical operator used.
+The translation process from the PIC-SURE to the i2b2 API iterates over all the \emph{where clauses}, translates them into an i2b2 \emph{item}, and assembles those \emph{items} appropriately into \emph{panels} according to the PIC-SURE logical operator used.
 
 % pic-sure query example
 \begin{samepage}
@@ -153,22 +153,23 @@ This query would be translated into the following i2b2 XML query format:
 
 \subsubsection{Query Terms Translation}
 
-When translating a query term into and i2b2 \emph{item}, some additional processing might be needed according to the predicate used.
+When translating a query term into and i2b2 \emph{item}, some additional processing might be needed depending on the predicate used.
 It is not the case for the simple \verb|CONTAINS| predicate, which is straightforwardly translated using the path in the i2b2 ontology tree.
 For the others, the additional information is added to the item:
 
 \begin{samepage}
 \begin{itemize}
-    \item \verb|CONSTRAIN_MODIFIER|: on the item is added the path of the applied modifier in the ontology tree
-    \item \verb|CONSTRAIN_DATE|: on the item is added the dates and parameters specified by the querier
-    \item \verb|CONSTRAIN_VALUE|: on the item is added the value and parameters specified by the querier
+    \item \verb|CONSTRAIN_MODIFIER|: the path of the applied modifier in the ontology tree
+    \item \verb|CONSTRAIN_DATE|: the dates and parameters specified by the querier
+    \item \verb|CONSTRAIN_VALUE|: the value and parameters specified by the querier
 \end{itemize}
 \end{samepage}
 
 
-\subsubsection*{Implementation}
+\subsubsection{Implementation}
 
-The translation of queries is left mostly untouched from its original implementation, except from the support of query terms negation that is implemented.
+The translation of queries is left mostly unmodified from its original implementation, 
+the only addition is the implementation of support for query terms negation.
 
 
 \subsection{Results Management}
@@ -178,14 +179,14 @@ After making the query request, IRCT registers in its own database the query wit
     <i2b2 project id>|<i2b2 query id>|<i2b2 result id>
 \end{verbatim}
 
-Using those i2b2 identifiers IRCT is able to request to i2b2 the status of the query.
+Using those i2b2 identifiers IRCT is able to request from i2b2 the status of the query.
 Once the query is over and successful, its patient count results are retrieved from i2b2 and stored in the IRCT database.
 
 
 \subsection{Miscellaneous implementation tasks}
 
 % hibernate change
-While IRCT uses Hibernate~\cite{todo} to abstract away the SQL database used, in our case using PostgreSQL does not work as the default SQL table names use some reserved keywords.
+While IRCT uses Hibernate~\cite{wiki:hibernate} to abstract away the SQL database used, in our case using PostgreSQL does not work as the default SQL table names use some reserved keywords.
 To counter this we use the Hibernate feature that allows to add a specific prefix to the table names.
 
 % sql functions
@@ -193,9 +194,9 @@ Configuring an i2b2 data source to be used in IRCT requires to add a specific se
 To do so, we implement a PL/pgSQL function that can be called with the appropriate parameters to add an i2b2 resource.
 
 % cors
-Web browsers block by default web requests made to other web site than the web site it originate from, as a security feature.
-This can circumvented by using the Cross-Origin Resource Sharing (CORS)~\cite{todo} standard that modern web browsers implement.
-CORS allows web pages to make web requests to web site other than the web site from which the script is executed, but only if the web service serving the request explicitly allows the web site from which the request originates.
+Web browsers block by default web requests made to other web sites than the originating web site, as a security feature.
+This can be circumvented by using the Cross-Origin Resource Sharing (CORS)~\cite{rfc:cors} standard that modern web browsers implement.
+CORS allows web pages to make web requests to web sites other than the web site from which the script is executed, but only if the web service serving the request explicitly allows the web site from which the request originates.
 This is checked automatically by the browser, which before making an actual HTTP request, will make an \verb|OPTION| HTTP request to the web service to get the list of domains allowed to make requests.
 This feature is not initially implemented by IRCT.
 We implement it by allowing unauthenticated HTTP \verb|OPTION| requests, and by embedding the appropriate headers into the answer.

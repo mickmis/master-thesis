@@ -1,27 +1,40 @@
 \chapter{Conclusion}
 \label{sec:conclusion}
-% not just summary: insightful conclusion
+
+% review
+Throughout this thesis we designed and implemented a system providing a front end able to query the clinical research systems \emph{i2b2}, \emph{tranSMART} and \emph{MedCo}, with negligible overhead compared to the original platforms.
+The supported queries allow researchers to do cohort exploration based on common criteria, giving technical means to clinical sites to share their data.
+
+%
+By this we are alleviating the challenges stated in the introduction.
+First the technical challenge, we are bringing together technically the two main open-source clinical research systems with an interoperability layer that can be used by a unique front end.
+Second the legal and ethical challenge, by integrating MedCo in this interoperability layer, clinical sites are given the option to securely share their data with strong privacy and security guarantees.
+
+All in all, with our system we took a step towards the technical convergence of the main clinical research systems.
+We are providing researchers with a modern a powerful front end that abstracts away the technical differences between platforms, and enable clinical sites to share that would otherwise not be shared without the strong privacy and security guarantees offered. 
+
+
 
 \section{Future Work}
+\label{sec:futurework}
 
-\begin{itemize}
-    \item additional pic-sure resources: HAIL, ODSY OMOP
-    \item for HAIL: the R connector through PIC-SURE, work of Denise
-    \item missing features: query saving, data extraction
-\end{itemize}
+Future work on our system could be done on both the front end and the interoperability layer.
+On the front end features that exists for tranSMART could be added for the PIC-SURE implementation, such as a standard mechanism for saving queries, data export, or advanced data analysis.
+The interoperability layer could be easily extended to support more systems in Glowing Bear with low implementation effort, systems such as HAIL~\cite{hail}, SciDB~\cite{brown2010overview} or SHRINE~\cite{shrine}.
+To bring more uniformity and easier maintenance, the support of tranSMART could be brought through PIC-SURE.
+We could also imagine a way to bring uniformity in the data coming from clinical research systems, allowing to query data from multiple systems at a time.
 
-% HAIL / R / PIC-SURE: https://www.ncbi.nlm.nih.gov/pubmed/29267850
-% checkout/mention more general systems: scidb / elasticsearch / olap-mdx (mdx is the query language, olap the model)-could be envisioned to be supported thorgh pic sure --> go to future work
+A work already in progress on our solution consists in bringing the support of HAIL through Livy~\cite{livy} in IRCT, and combining it with i2b2 for powerful cohort exploration with genomic data.
 
-% add blockchain auth (gb)
-% add PIC-SURE generic query in gb to be able to use other kind of data source
-% add shrine
+% hail on spark, livy rest iface for spark
 
-% from wardo:
-% % ======== evaluation how impl. met 
-% Next steps:
-% - Building out a wider set of functionality
-% - Support tranSMART via PIC-SURE API or PIC-SURE and tranSMART API at the same time
-% - Allowing multiple PIC-SURE data sources to be connected at the same time
-% - Allowing to ask questions on multiple data-sources at the same time - Refer to work of Denise and Jeremy, connecting Hail + Livy and i2b2 or tranSMART at the same time.
-% - Comment on connecting non-i2b2 based data sources (eg Hail)
+% todo below add info
+% This can be done through the 
+
+% todo citation HAIL / R / PIC-SURE: https://www.ncbi.nlm.nih.gov/pubmed/29267850
+
+% write up for using hail and i2b2 at the same time more detailed, e.g. what would be said to denise 
+
+% example: transmart and hail, because transmart not through irct
+
+% 

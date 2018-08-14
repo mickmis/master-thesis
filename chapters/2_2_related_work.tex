@@ -1,26 +1,28 @@
 \section{Related Work}
 
+Our literature review focus on approaches similar to our main contribution, an interoperability layer for clinical research systems coupled with a front end.
+
+
 \paragraph{SHRINE}
+
+SHRINE (Shared Health Research Informatics NEtwork)~\cite{shrine} is a system that allows to network i2b2 instances together.
+From a single webclient, a fork of the i2b2 webclient, several i2b2 can be queried at the same time, and their results be displayed in a unique interface.
+By this, SHRINE offers an interoperability layer over an arbitrary number of i2b2 instances.
+SHRINE's design is very tightly linked to i2b2 and extending its support to additional clinical research system is not possible.
+
 
 \paragraph{Borderline}
 
+% borderline
+\emph{Borderline}~\cite{borderline} is a set of services that includes a user interface, and several back end components.
+The user interface allows users to query clinical research platforms.
+This UI communicates with its back end which manages the queries and proxies them to the connectors.
+The connectors are responsible to query platforms containing patient data, such as tranSMART.
+Borderline is a more of a query workflow management tool rather than a proper cohort explorer, and it is at the time of writing still a work-in-progress.
 
-% things that could be used to solve our problem as a whole (this is different form technological choices!)
-% split related in 2 for the 2 objectives: this makes sense because they are relatively different
-\begin{itemize}
-    \item l-i2b2-facade + l-i2b2-shrine
-    \item other approaches to medical data browsing?
-    \item SHRINE
-    \item privacy-preserving solutions?
-    \item borderline
-\end{itemize}
 
-% l-i2b2: https://www.ncbi.nlm.nih.gov/pubmed/29295360
-% https://github.com/li2b2
 
 % check citations from other papers (bd2k and others)
-% new pub. release of pic sure from avillach : comparison (will be presented end of june) or not? check w/ ward
-% : check medco papers for privacy preserving solutions
 
 % other systems:
 % borderline:
@@ -28,19 +30,7 @@
 % https://github.com/dsi-icl/borderline-middleware
 % Etriks Analytics Environment
 % https://eae.etriks.org/eae/
-% [7:33 PM] Ward Weistra: @FlorianGuitton is also on Hipchat here
-% [10:16 PM] Ward Weistra: Florian (Imperial College) on the question whether the list you found were the supported data sources:
-% [10:16 PM] Ward Weistra:
-%     |  [7:41 PM] Florian Guitton: Yes, those are the ones here. Additionnaly we are looking at Stata and Icometrix, but those are not present on the repo yet.
-%     |  [7:41 PM] Florian Guitton: As you can see here : https://github.com/dsi-icl/borderline-middleware/blob/master/src/core/queryObject_TS17_1.js#L329-L33...
-%     |  [7:42 PM] Florian Guitton: We are not applying any transformation to the transmart API at this point in time
-%     |  [7:42 PM] Florian Guitton: and are simply "proxifying"
-%     |  [7:42 PM] Florian Guitton: the authentication, query, polling, update, result extraction is managed by the middleware as well
-%     |  [7:43 PM] Florian Guitton: the borderline-server manages the workflow, stepping, queries, users and health of the cluster
-%     |  [7:44 PM] Florian Guitton: it defers queries to a middleware picked in a pool based on some logic.
-%     |  [7:46 PM] Florian Guitton: data once extracted is loaded into a swift object store and "moved arround" simply by passing ids to it's location to things like the eAE or XNAT docker pipelines
-%     |  [7:47 PM] Florian Guitton: Word of caution however, as I said it is very much a work in progress, and while is behaves according to our unit tests, there are no garantee at this point and some concerns have been defferred to later work
-% [10:17 PM] Ward Weistra: That link was https://github.com/dsi-icl/borderline-middleware/blob/master/src/core/queryObject_TS17_1.js#L329-L33...
+
 
 % - https://academic.oup.com/jamia/article/22/6/1132/2357622?searchresult=1
 % - https://github.com/hms-dbmi/hackathon-Sept2017
@@ -58,39 +48,11 @@
 % - is there transmart paper?
 % - http://journals.sagepub.com/doi/abs/10.1177/1473871614526077: stopped at 18
 % how to write: 
-% % http://cs.fit.edu/~wds/guides/howto/howto.html
-% - https://en.wikipedia.org/wiki/Online_analytical_processing
-% - https://en.wikipedia.org/wiki/MultiDimensional_eXpressions
-% - https://en.wikipedia.org/wiki/Mondrian_OLAP_server
 % - http://wiki.openi.org/openi-plug-in-for-i2b2
 
+% todo: mention data sharing initiatives? all of us, eu initiatives
 
-% borderline
-% \emph{Borderline} is a set of components implemented in Javascript, including a user interface, that allows to create and execute queries against clinical research platforms.
-% Compared to the others, it is a more serious candidate. It is web-based, modern and supports tranSMART, with plans to support i2b2 as well.
-% However it is at the time of this project in a work-in-progress state, under heavy development, thus not yet stable.
-% Additionally it does not support API translation, only some kind of API proxying.
-% For those reason we choose not to retain this solution.
-
-
-% related work: shrine, borderline
-
-% todo: mention data sharing initiatives
-% all of us
-% eu initiatives
-
-
-
-% \section{Related Work}
-% say if open source or not 
-% this is more analytic than background: offering an overview of what else is done and compare it to what we are doing, reuse what was said in the background
-%CAVA: http://perer.org/papers/adamPerer-CAVA-IVS2014.pdf
-
-%all the work mentioned in background
 
 %they had a partnership with pic sure: %https://academic.oup.com/jamia/article/22/6/1132/2357622?searchresult=1
 %pic sure 'wow' story (nhanes): %https://bd2kccc.org/wp-content/uploads/2017/02/15_PIC-SURE_FInal.pdf
 
-% todo: OMOP: https://www.ohdsi.org/data-standardization/the-common-data-model/
-% -> explore it
-% have a list of data models (perpendicular to list of back end systems)

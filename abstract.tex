@@ -1,10 +1,16 @@
+\newgeometry{left=3cm,right=3cm}
 \begin{abstract}
-%Should be self-contained, Can’t be too long; short is good
-%Should encourage the reader to read on, Think about its structure
-%
-%Problem/Motivation (1–2 sentences)
-%Solution (Key idea) (1–2 sentences)
-%More detail on contribution (2 sentences)
-%Some evidence (eg evaluation results) (1–2 sentences)
-\lipsum[66]
+
+% problem / motivation
+Being able to exploit large and heterogeneous medical data is crucial for realizing the promise of precision medicine to its full potential. 
+Yet, due to the current presence of multiple and fragmented systems at different clinical sites, it is often difficult to enable researchers to access the data they need. 
+Privacy and security concerns also represent major obstacles that need to be overcome in order to get access to sensitive medical data that are usually not exposed by clinical sites for the fear of data leaks. 
+
+% solution / key idea
+To address these challenges, we propose Glowing Bear as a common front end to the clinical research platforms i2b2, tranSMART and MedCo.
+This system uses IRCT, the implementation of the PIC-SURE API, which acts as an interoperability layer that translates clinical research queries into native API languages.
+With this, we take a step towards the technical convergence of i2b2 and tranSMART, giving clinical sites the means to share their data more easily.
+Even more with the support of MedCo, which with its strong privacy and security guarantees, enables clinical sites to share sensitive data that could otherwise not be shared.
+
 \end{abstract}
+\restoregeometry

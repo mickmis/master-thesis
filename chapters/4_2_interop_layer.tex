@@ -6,13 +6,13 @@
 
 % overview
 The front end we chose to use, Glowing Bear, is modified to support the PIC-SURE API in addition to the existing support of the tranSMART REST API v2.
-This section describes the process of Glowing Bear with PIC-SURE only, as the support for tranSMART is preexisting.
+This section describes the execution flow of Glowing Bear with PIC-SURE only, as the support for tranSMART is preexisting.
 For each part, we first describe the workflow in its final form, and then which implementation steps are taken to reach that stage.
 
 \subsection{Initialization}
 
 % configuration
-The very first step is reading the configuration, which defines the mode in which the running instance is running: tranSMART or PIC-SURE; and the according authentication process to use.
+The very first step is reading the configuration, which defines the mode in which the running instance is running: tranSMART or PIC-SURE; and the corresponding authentication process to use.
 It also allows to enable or disable certain features, according to the back end compatibility.
 The features that can be controlled this way are:
 \begin{enumerate*}
@@ -31,7 +31,7 @@ After the configuration is loaded, Glowing Bear checks the validity of the token
 After the login is successful Glowing Bear gets the list of available resources with the PIC-SURE API and extracts the definition of the resource it is configured to use (see~\ref{sec:bg-picsure}).
 
 
-\subsubsection*{Implementation}
+\subsubsection{Implementation}
 
 % configuration
 The following configuration options are added:
@@ -76,18 +76,18 @@ At initialization this service fetches the definition of the PIC-SURE resources 
 Right after Glowing Bear is fully initialized the tree of query terms is loaded.
 As PIC-SURE supports only node-per-node loading, just the root nodes are loaded. 
 This behavior is controlled by a configuration option.
-For this reason, the free-text search in the tree can not be used and the auto-completion feature in the query construction component is degraded and only has the already-loaded nodes.
-Then as the user expands the nodes in the tree, calls are made to the back end to dynamically load the children nodes.
+For this reason, the free-text search in the tree can not be used and the auto-completion feature in the query construction component is degraded and only has the pre-loaded nodes.
+Then, as the user expands the nodes in the tree, calls are made to the back end to dynamically load the children nodes.
 
 % tree structure
-Each node in the tree in characterized by a unique path, which for PIC-SURE on i2b2 has the following format:
+Each node in the tree is characterized by a unique path, which for PIC-SURE on i2b2 has the following format:
 \begin{verbatim}
     /<data source name>/<i2b2 project name>/<category>/.../<concept>/
 \end{verbatim}
 When displaying the tree, we omit the first element of the tree (\emph{PIC-SURE resource name}) as it is constant during the runtime, specified by the configuration.
 
 % node content
-Tree nodes each contain the information needed to be used as a query term.
+Each tree node contains the information needed to be used as a query term.
 They can be of three types: \emph{concept}, \emph{modifier}, \emph{study}, or \emph{unknown}.
 An unknown type node is not queryable. 
 A study type node is only used by tranSMART.
@@ -102,20 +102,20 @@ The queryable nodes in i2b2 are all concepts, and are themselves subdivided in s
 \end{itemize}
 Each of those types is mapped to the appropriate user interface component, for taking the user input.
 This component is displayed in the query construction component, after the tree node is drag-and-dropped from the tree.
-Additionally the nodes have the information about whether or not they may have children, i.e. if they are leaves in the tree.
+Additionally the nodes have the information about whether they are internal nodes or tree leaves.
 
 
-\subsubsection*{Implementation}
+\subsubsection{Implementation}
 
 % loading refactor
-Originally Glowing Bear supports only a greedy loading method, as in the whole tree is loaded at initialization.
+Originally Glowing Bear supports only a greedy loading method, that is the whole tree is loaded at initialization.
 Because PIC-SURE does not support this, at least not with acceptable performance, we refactor the \emph{Tree Node Service} to load at initialization time only the root node, if specified in the configuration.
 Then we add in the \emph{Tree Node Component}, which displays the tree in the UI, the ability to load dynamically the children nodes when the user expands a tree node with missing children.
 
 % tree node type
 The original tranSMART tree node implementation represents tree nodes without typing, i.e. generic objects.
 To improve the code quality and enforce a common structure between the two API implementations, we create a new \emph{Tree Node Model}.
-We modify the tranSMART and create the PIC-SURE API implementations so that they both produce the same \emph{Tree Node Model}.
+We modify the tranSMART and create the PIC-SURE API implementation so that they both produce the same \emph{Tree Node Model}.
 Among the concept types originally supported, we add the types \emph{categorical option}, \emph{text}, \emph{high dimensional} and \emph{simple}.
 These cover both the new i2b2 types, and a regrouping of tranSMART types for more clarity.
 
@@ -123,8 +123,8 @@ These cover both the new i2b2 types, and a regrouping of tranSMART types for mor
 \subsection{Query Construction}
 
 % intro
-The user constructs his query by drag-and-dropping query terms from the tree to the query construction component.
-As the user do so, Glowing Bear might request to the back end additional information on the query terms.
+The user constructs her query by drag-and-dropping query terms from the tree to the query construction component.
+As the user does so, Glowing Bear might request from the back end additional information on the query terms.
 Once done, and before submitting to the back end, this query is mapped to the PIC-SURE query format.
 
 \subsubsection{Query Terms Metadata}
@@ -137,7 +137,7 @@ With an i2b2 resource, this call is used for \emph{categorical} query terms type
 % answer
 The answer is a usual PIC-SURE tree node answer, with additional metadata containing the categorical values.
 These are then used by the sub-component to be displayed to the user.
-Example of such an answer:
+This is an example of such an answer:
 
 \begin{samepage}
 \begin{verbatim}
@@ -159,7 +159,7 @@ Example of such an answer:
 
 \paragraph{Data Types}
 A query is a set of constraints, expressed as a list of \emph{where clauses} as explained in \ref{sec:bg-picsure}.
-As each tree node is associated to a PIC-SURE data type like explained in section~\ref{sec:design-tree}, we know through the resource definition what predicates can be applied on them.
+Since each tree node is associated to a PIC-SURE data type like explained in section~\ref{sec:design-tree}, we know through the resource definition what predicates can be applied on them.
 For an i2b2 resource, here follows the data types and corresponding predicates:
 \begin{itemize}
     \setlength\itemsep{0em}
@@ -169,7 +169,7 @@ For an i2b2 resource, here follows the data types and corresponding predicates:
 \end{itemize}
 
 \paragraph{Predicates}
-Some predicates takes values as input:
+Some predicates take values as input:
 \begin{itemize}
     \setlength\itemsep{0em}
 
@@ -216,8 +216,8 @@ While tranSMART supports full freedom in the combination of query terms, i2b2 is
 \begin{verbatim}
     (A OR B OR ...) AND (C OR D OR ...) AND ...
 \end{verbatim}
-That is, blocks of query terms linked by an \verb|AND|, themselves linked by an \verb|OR|.
-The restriction to this format is controlled by the configuration, and if enabled the user if forced to respect it.
+That is, blocks of query terms linked by an \verb|AND|, where each block is internally linked by an \verb|OR|.
+The restriction to this format is controlled by the configuration, and if enabled the user is forced to respect it.
 In the PIC-SURE API, this translates to setting accordingly the \emph{logical operator} as such:
 \begin{samepage}
 \begin{verbatim}
@@ -241,7 +241,7 @@ In the PIC-SURE API, this translates to setting accordingly the \emph{logical op
 % todo: is there more than that?
 
 % query metadata
-The mechanism to request metadata about a query term to the back end is preexisting.
+The mechanism to request metadata about a query term from the back end is preexisting.
 As such we implement the call in the \emph{PIC-SURE Resource Service} that returns the specific model that Glowing Bear expects to populate its data structures for the display and selection of the categorical variable.
 
 % query construction
@@ -254,14 +254,14 @@ If enabled, the component holding the combination of query terms enforce this re
 The first level of nesting is always an \verb|AND|, the second level always an \verb|OR|, and no more levels are allowed.
 
 
-\subsection{Query Request & Result Retrieval}
+\subsection{Query Request \& Result Retrieval}
 \label{sec:interoplayer-gb-results}
 
 % intro
 After constructing the query as previously described, Glowing Bear submits the query to the back end using the \emph{PIC-SURE Query Service}.
 At this stage, we are interested only in the result patient count of the query to be displayed to the user, which is what is requested in the query.
 
-\paragraph{Query Request}
+\subsubsection{Query Request}
 When using only inclusion criterion, a single query is submitted as expected. 
 The count returned is displayed as it is to the user.
 However when using both inclusion and exclusion criterion, two query requests are actually submitted:
@@ -283,7 +283,7 @@ Making two separate queries allows to display slightly more detailed counts to t
 \end{itemize}
 
 
-\paragraph{Result Retrieval}
+\subsubsection{Result Retrieval}
 Due to the asynchronous nature of the PIC-SURE queries, the request does not include the actual result, but the identifier of the result.
 Using this identifier, Glowing Bear regularly polls the back end using the \emph{PIC-SURE Result Service} to inquire about the result status.
 This status can take several values:
@@ -298,7 +298,7 @@ This status can take several values:
 When the result becomes available, it is requested using the same identifier and then displayed.
 
 
-\subsubsection*{Implementation}
+\subsubsection{Implementation}
 
 The implementation of this part is made in the Glowing Bear \emph{PIC-SURE Resource Service}, orchestrated from a single method as the core code expects synchronous count results from the query.
 The result retrieval is configured to poll every second the back end for the result status, and waits up to one minute.
