@@ -1,6 +1,3 @@
-
-% todo: mention the i2b2 process and all from paper
-
 \section{PIC-SURE to i2b2 API Translation}
 \label{sec:interoplayer-picsure}
 
@@ -69,13 +66,12 @@ With the i2b2 implementation, we do not use the primitive types, only the ones w
 \begin{samepage}
 \begin{itemize}
     \item \verb|concept|: simple query term, maps to the \emph{simple} GB types
-    \item \verb|concept_numerical|: query term with numeric value, maps to \emph{numerical} GB type
+    \item \verb|concept_numerical|: query term with numerical value, maps to \emph{numerical} GB type
     \item \verb|concept_enum|: query term with categorical value, maps to \emph{categorical} GB type
     \item \verb|concept_string|: query term with free-text value, maps to \emph{text} GB type
 \end{itemize}
 \end{samepage}
 
-% todo: predicates mapping??
 
 \subsubsection{Implementation}
 
@@ -84,7 +80,6 @@ Browsing the i2b2 ontology tree is already implemented in IRCT, we enhance it wi
 The specific i2b2 data types listed before are implemented, and the extraction of those types from the i2b2 ontology tree as well.
 We also implement adding to the tree nodes the relationships \emph{child} if the node has children, and \emph{aggregate} if it has aggregate values available.
 The i2b2 data source definition is modified accordingly.
-% todo: modifier?
 
 % aggregate
 Support for the \emph{aggregate} is implemented by making an ontology request to i2b2, and parsing the XML metadata associated with the node that contain this information, to embed the categorical values in the tree node.
@@ -191,7 +186,7 @@ To counter this we use the Hibernate feature that allows to add a specific prefi
 
 % sql functions
 Configuring an i2b2 data source to be used in IRCT requires to add a specific set of data in the PostgreSQL database.
-To do so, we implement a PL/pgSQL function that can be called with the appropriate parameters to add an i2b2 resource.
+To do so, we implement a PL/pgSQL function that can be called with the appropriate parameters to add an i2b2 data source.
 
 % cors
 Web browsers block by default web requests made to other web sites than the originating web site, as a security feature.

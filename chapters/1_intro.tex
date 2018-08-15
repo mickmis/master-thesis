@@ -1,16 +1,3 @@
-% todo: have disambiguation if needed
-% vocabulary
-% query terms: concepts (i2b2) / constraints (more than that) / tree node
-% query term type
-% query: constraints
-% data sources (no pic-sure resource)
-% "thesis" rather than paper or document
-% ============================
-
-% todo about values: better to not say
-
-% wording of everything?
-
 % motivation / problem
 \chapter{Introduction}
 
@@ -56,13 +43,13 @@ Queries should support inclusion and exclusion criteria, themselves composed of 
 
 % example 
 An example of such a query supported by our system would be querying for
-\emph{the number of patients aged between 17 and 30, diagnosed with cutaneous melanoma in the last 5 years, excluding patients that had a chemotherapy}
+\emph{the number of patients aged between 17 and 30, diagnosed with cutaneous melanoma, excluding patients that had a chemotherapy}
 With the specific criteria supported by our system, this would translate to support the following query:
 \begin{itemize}
     \item \emph{Inclusion criteria}
     \begin{itemize}
         \item Age: $\geq 17$, $\leq 30$
-        \item Cutaneous Melanoma diagnosis (date constraint: in the last 5 years)  
+        \item Cutaneous Melanoma diagnosis
     \end{itemize}
     
     \item \emph{Exclusion criteria}
@@ -81,12 +68,7 @@ We translate the aforementioned objectives into the following requirements.
 Our solution must:
 
 \begin{enumerate}
-    \item offer a modern web-based front end for clinical research platforms that allows cohort exploration, possibly based on the following criteria:
-    \begin{enumerate}
-        \item inclusion and exclusion
-        \item presence of an ontology query term
-        \item value constraints: categorical, numerical and time
-    \end{enumerate}
+    \item offer a modern web-based front end for clinical research platforms that allows cohort exploration based on inclusion and exclusion of query terms
     \item be compatible with the two major open-source clinical research systems: tranSMART (v17.1) and i2b2
     \item enable sharing of sensitive data in a privacy-preserving way with MedCo
     \item be easily extensible for future support of additional platforms

@@ -1,23 +1,25 @@
 \chapter{System Evaluation}
 \label{sec:evaluation}
 
+\section{Requirements Fulfillment}
+
 In this section we show how the requirements enumerated section~\ref{sec:requirements} are fulfilled.
 
 \begin{enumerate}
     \item \emph{offer a modern web-based front end for clinical research platforms that allows cohort exploration, based on several types of criteria} \\
     As a first goal we set out to make sure we would use a modern front end, that would allow for cohort exploration. The chosen front end, Glowing Bear, is a user-friendly web application built using modern technologies (Typescript and Angular).
-    It offers cohort exploration based on the targeted criteria: inclusion and exclusion, presence of ontology query term, and constraint based on their value.
+    It offers cohort exploration based on the targeted criteria: inclusion and exclusion of ontology query terms.
     
     \item \emph{be compatible with the two major open-source clinical research systems: tranSMART (v17.1) and i2b2} \\
-    It supports both targeted platforms i2b2 and tranSMART 17.1.
-    It has the acceptable limitation that queries cannot combine terms from different data sources.
+    It supports both targeted platforms i2b2 and tranSMART 17.1 with the minimal set of features we aimed for.
 
     \item \emph{enable sharing of sensitive data in a privacy-preserving way with MedCo} \\
-    Its support of MedCo enables users access to sensitive data that would not be shared without the strong privacy and security guarantees offered.
+    Its support of MedCo enables clinical sites to share sensitive data that could otherwise not be shared without the strong privacy and security guarantees offered.
 
     \item \emph{be easily extensible for future support of additional platforms} \\
     Integration of the PIC-SURE API through IRCT makes our solution offer a framework for future developers to easily implement support for additional systems, as proposed in the future work section~\ref{sec:futurework}.
-    Moreover it makes use of implementation-independent RESTful~\cite{rest} standard APIs.
+    Additionally our system has a decoupled architecture making use of implementation-independent RESTful~\cite{rest} standard APIs.
+    This separation of concerns simplifies development around our system.
 
     \item \emph{alleviate technical hindrances against its use} \\
     During the design and implementation phases of our solution, many considerations have been taken into account to alleviate technical constraints around its usage.
@@ -47,36 +49,31 @@ In this section we show how the requirements enumerated section~\ref{sec:require
         
         
     \end{enumerate}
-
-
-% part to say it will be fine with bigger query
-% assumed qd, irct is kn, this gives n
-
-% outside of translation, simple proxying
-
-
-% % practical runtime
-% Finally the query times are kept practical for users, i.e. the overhead compared to the original systems is kept minimal.
-% This overhead is kept constant as the total runtime depends mainly on the time the clinical research systems take to answer to the query.
-% The overhead is $O(c)$, $c=f(q)$ being linear to the number of query $f$ linear and $O(c) + O(a) = O(c + a) = O(c)$.
-% For d fixed the query time is equivalent to .
-
-
-% We make the hypothesis that the clinical research systems is 
-% Assuming that the query times is function of $O(q)$, i.e. linear to the number of query terms, 
-
-% Queries are constrsucted in  a way 
-% it is extrapolated from exprimental measurements of experimentally determined by<medcopaper> that i2b2 query times are a linear function of the number of query terms $n$ times a factor proportional to the database size $d$: $O(nd)$.
-% o(nd +n), o(n(d+1)) = o(n)
-
-
 \end{enumerate}
 
 
-% if time allows, measurements possibilities:
-% - i2b2 query times vs picsure+i2b2 query times (overhead)
-% - medco query times with pic-sure vs previously with shrine (refer to the paper)
-% - compare gb on public i2b2 with i2b2 webclient public demo
-% - irct: measure time it takes just this
- 
- 
+\section{Limitations}
+
+\subsection{Combining Data Sources}
+Queries made in our system cannot combine query terms from different data sources at the same time.
+While simply combining query terms is straightforward to implement on a purely technical level, querying different clinical research platforms at the same time implies harmonizing the semantic of their data.
+This could be done either by enforcing the same semantic at the loading time, or having a mapping mechanism.
+In both cases, this was left out of the focus of this thesis.
+
+\subsection{tranSMART Support in the Interoperability Layer}
+Support of tranSMART in the interoperability layer is implemented directly in Glowing Bear, while support for other platforms is through the PIC-SURE API.
+The cause of this situation is the preexisting support tranSMART in Glowing Bear, which has some advanced features.
+While it was feasible to re-implement support of tranSMART through PIC-SURE, the immediate added value of this work would have been low.
+This however may raise concerns for the future development around our system because of the increased complexity.
+
+\subsection{Contributions to the Open-Source Community}
+The modifications or new implementations made in existing open-source projects were all the subject of \emph{pull request} on their original repositories, in order to mainline our work.
+There is however no guarantee that the maintainers of those projects will accept them.
+If they are not accepted, either they can be with additional modifications, or they are simply rejected.
+In the first case, additional implementation effort to mainline our changes would be needed, but there would not be further consequences if properly done.
+In the second case, we would need to maintain a fork of the original code bases and regularly integrate the new developments back into the fork, which would increase the complexity of maintaining our system.
+
+\subsection{Features Offered through PIC-SURE}
+The cohort exploration features offered in Glowing Bear when using PIC-SURE remain basic: inclusion and exclusion of ontology query terms.
+While this is a functional proof of concept, it is likely that clinical sites desire more advanced features, such as the ones available in Glowing Bear when using tranSMART.
+This implies that additional efforts will be needed in the future on the system to implement support of more advanced features, in order to convince potential clinical sites to adopt our system.

@@ -1,6 +1,3 @@
-% todo: uniform vocab (concepts / entities) (backend / back end)
-% todo: numeric / numerical
-
 \chapter{Interoperability Layer for Clinical Research Systems}
 \label{sec:interoplayer}
 
@@ -14,7 +11,7 @@ We are then detailing the design and implementation of the different parts solvi
 Appendix~\ref{sec:docker} covers exhaustively the technical details of the Docker-based deployment of the system.
 
 
-\section{i2b2 Detailed Workflow}
+\section{Detailed Workflow}
 \label{sec:interoplayer-wf}
 
 \begin{figure}[ht]
@@ -27,9 +24,7 @@ Appendix~\ref{sec:docker} covers exhaustively the technical details of the Docke
 This section gives an overview of the full workflow of our system when constructing and executing a query.
 Some steps are specific to \textit{tranSMART} 17.1 or \textit{PIC-SURE}.
 The step numbering refers to figure~\ref{fig:sys-diagram-full-steps}.
-% todo: use only transmart / i2b2?
 
-% todo: screenshots when makes sense
 \begin{enumerate}
 \item \label{enum:wf-interop-login}\textbf{User Login}:
 The user accesses Glowing Bear through its web browser, which redirects it to the Keycloak login page.
@@ -39,7 +34,7 @@ The user is thus logged in in the system.
 \item \label{enum:wf-interop-init} \textbf{Glowing Bear Initialization}:
 Glowing Bear reads from its configuration which type of back end it should use.
 The tree of query terms is loaded, either entirely (\textit{tranSMART}) or only the root nodes (\textit{PIC-SURE}).
-In the \textit{PIC-SURE} case, Glowing Bear fetches the definitions of the resources set up on IRCT.
+In the \textit{PIC-SURE} case, Glowing Bear fetches the definitions of the data sources set up on IRCT.
 
 \item \textbf{Query Construction}:
 The user browses the tree of query terms and uses them to construct a query corresponding to a patient set.
@@ -49,7 +44,7 @@ The user then optionally sets value(s) to the query term.
 \item \textbf{Query Submission}:
 Upon user request (or automatically according to the configuration), Glowing Bear submits the query to the back end.
 
-\item \textbf{Query Translation} \textit{PIC-SURE only}: IRCT uses the appropriate resource interface to perform the translation into the native i2b2 API of the query, and submits it to i2b2.
+\item \textbf{Query Translation} \textit{PIC-SURE only}: IRCT uses the appropriate data source interface to perform the translation into the native i2b2 API of the query, and submits it to i2b2.
 
 \item \textbf{Query Processing}: the submitted query, either directly from Glowing Bear for tranSMART or through IRCT for i2b2, is processed by the platform. 
 The result is sent back to the requester.
@@ -67,9 +62,6 @@ Given the asynchronous nature of IRCT when processing queries, Glowing Bear peri
 
 % outline
 This section first exposes how the authentication (identity) and authorization (access) are handled in our system with OpenID Connect and Keycloak, and then the steps taken to achieve this implementation.
-
-% todo: oauth2/oidc/jwt/jwk cite as rfc
-
 
 \subsection{Authentication}
 
@@ -110,9 +102,8 @@ It is done by adding the following HTTP header, which is specified by~\cite{rfc:
     Authorization : Bearer <token>
 \end{verbatim}
 
-% todo cite: http://openid.net/specs/openid-connect-implicit-1_0.html#AccessTokenValidation
 % validating tokens from the back end
-Validating an access token in the JWT format requires several checks, performed in the back end systems.
+Validating an access token in the JWT format requires several checks, performed in the back end systems~\cite{rfc:oidc}.
 The prerequisite to those checks is that the back end system should fetch from Keycloak its public signing keys, which are made available in the JSON Web Key Set format (JWKS)~\cite{rfc:jwk}.
 The checks are:
 
@@ -124,15 +115,6 @@ The checks are:
 \end{itemize}
 
 Using this authentication mechanism, the back end systems have a stateless authentication that needs only Keycloak's URL, the client identifier and the token.
-
-% todo: flow diagram for auth, add the steps in text
-% \begin{figure}[ht]
-%     \centering
-%     \includegraphics[width=1\textwidth]{figures/access_mgmt.png}
-%     \caption{Diagram of the access management design.}
-%     \label{fig:accessmgmt}
-% \end{figure}
-
 
 \subsection{Authorization}
 
@@ -147,8 +129,6 @@ The standard does not specify a format for encoding authorizations, it is left a
 As Keycloak has its own format of authorization encoding, it also provides the ability to map authorizations to a specific format according to the client.
 It is thus the responsibility of the administrator doing the deployment to make these two formats match by using the mapping capabilities of Keycloak.
 
-% transmart/client authorizations enforcement
-% todo?
 
 \subsection{Implementation}
 
@@ -192,31 +172,3 @@ Because there is no such thing as a standard username field, it needs to be spec
 % how token is sent
 The token is passed through the \verb|password| field of the i2b2 XML API.
 This approach is not among the recommended ones, but it does not go against the OpenID Connect standard, and it simplifies greatly the implementation.
-
-
-% todo ------- merge this:
-% \subsection{Identity and Access Management}
-% THIS IS FOR 3.1
-
-% % auth with IRCT
-% All requests made to IRCT with the PIC-SURE API must be authenticated with a JWT as explained section 
-
-
-% % auth with data sources
-% Because IRCT communicates with i2b2, it has to somehow be authenticated with it.
-% We support two ways of doing so:
-% \begin{itemize}
-%     \item IRCT requests are authenticated against i2b2 as being the IRCT system
-%     \item IRCT requests are authenticated as being from the requesting user in the client system
-% \end{itemize}
-% The first implies that IRCT must have a fixed set of credentials to authenticate against i2b2.
-% This poses some obvious security problems, as this means that all users using the PIC-SURE API must have the same level of access.
-% The second one, which we use in our solution, makes use of the user's JWT, 
-% access mgmt / authorization handled by the data source, user must exisgt in data source
-
-% matching users
-
-% \subsubsection*{Implementation}
-% - cors
-% - token change type -> prev sec
-% - i2b2 auth -> prev sec

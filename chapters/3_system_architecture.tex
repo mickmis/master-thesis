@@ -36,9 +36,7 @@ They enable the use-cases presented before by leveraging an almost identical dat
 This schema has a central table containing \emph{observations}, and several dimension tables: \emph{patient}, \emph{visit}, \emph{concept} and \emph{modifier}.
 And specifically for tranSMART: \emph{study} and \emph{trial visit}.
 An observation is a dated record of an event that refers to entries in the aforementioned dimensions.
-We choose to support these two platforms, in their latest version at the time of the project, as together they host an enormous amount of data from hospitals, research institutes or pharmaceutical companies.
-% todo citation transmart: from https://en.wikipedia.org/wiki/TranSMART
-% todo: had citation to back last sentence about a lot of data
+We choose to support these two platforms, in their latest version at the time of the project, as together they host a very large amount of data from hospitals, research institutes or pharmaceutical companies~\cite{i2b2community}~\cite{transmartcommunity}.
 
 \begin{figure}[ht]
     \centering
@@ -138,9 +136,9 @@ For the reasons enumerated before, we choose in our system a hybrid approach: im
 In the front end the support of tranSMART is kept, and we use a back end component to take care of the translation to the other clinical research platforms, i2b2 and MedCo, all the while having Glowing Bear communicating with this component with a unique API.
 
 % pic-sure
-% todo: cite nhanes use case
 For this task the \emph{PIC-SURE} API~\cite{PIC-SURE-API} is the perfect tool.
 It is a generic API that was designed to be translated to any kind of API used for querying medical data, and supports several systems, including i2b2.
+Although recent, it has been already successfully used to explore data~\cite{patel2016database}.
 The back end component implementing the PIC-SURE API is \emph{IRCT} and is open-source.
 Thanks to its extensibility capabilities, we are also using it to implement support for MedCo.
 Support for the additional systems that IRCT is compatible with is left for future work.
@@ -203,5 +201,5 @@ The design of step~\ref{enum:wf-init} is covered in section~\ref{sec:interoplaye
 step~\ref{enum:wf-i2b2} in section~\ref{sec:interoplayer-gb} and~\ref{sec:interoplayer-picsure}, 
 step~\ref{enum:wf-medco} in section~\ref{sec:medco} and finally 
 step~\ref{enum:wf-results} in section~\ref{sec:interoplayer-gb}.
-Step~\ref{enum:wf-transmart} is not covered in this document as the support for tranSMART in Glowing Bear is preexisting.
+Step~\ref{enum:wf-transmart} is not covered in this thesis as the support for tranSMART in Glowing Bear is preexisting.
 

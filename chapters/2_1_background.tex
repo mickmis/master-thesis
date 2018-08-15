@@ -110,17 +110,11 @@ Components contain the logic of representing the data, and associate an object t
 \subsection{OpenID Connect}
 \label{sec:bg-oidc}
 
-% todo: claim, jwt
-% todo: backgorund about oidc (client id, etc.)
-% todo: list of requirements from the standards
-
-
 OpenID Connect is a protocol enabling authentication and authorization using a third-party implementing the server-side of the protocol.
 It offers several types of negotiations (called \emph{flow}) between the server and client(s), but they all end up with an access token used by a user to access a resource.
 This token is standardized as a JSON Web Token (JWT)~\cite{rfc:jwt}.
 
 \subsubsection*{JSON Web Token}
-% todo: cite rsa paper and sha and jwt and oidc
 
 A JWT is three distinct base64-encoded values separated by a dot: two JSON objects and a signature.
 The first is the header, which contains metadata about the JWT, such as the signing algorithm used and the identifier of the key used to perform the signing.
