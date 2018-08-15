@@ -7,7 +7,7 @@ In this section we show how the requirements enumerated section~\ref{sec:require
 
 \begin{enumerate}
     \item \emph{offer a modern web-based front end for clinical research platforms that allows cohort exploration, based on several types of criteria} \\
-    As a first goal we set out to make sure we would use a modern front end, that would allow for cohort exploration. The chosen front end, Glowing Bear, is a user-friendly web application built using modern technologies (Typescript and Angular).
+    The chosen front end, Glowing Bear, is a user-friendly web application built using modern technologies (Typescript and Angular).
     It offers cohort exploration based on the targeted criteria: inclusion and exclusion of ontology query terms.
     
     \item \emph{be compatible with the two major open-source clinical research systems: tranSMART (v17.1) and i2b2} \\
@@ -22,7 +22,7 @@ In this section we show how the requirements enumerated section~\ref{sec:require
     This separation of concerns simplifies development around our system.
 
     \item \emph{alleviate technical hindrances against its use} \\
-    During the design and implementation phases of our solution, many considerations have been taken into account to alleviate technical constraints around its usage.
+    During the design and implementation phases of our solution, many considerations have been taken into account to alleviate technical constraints around its usage:
     \begin{enumerate}
         \item \emph{being easy to deploy, even in existing environments} \\
         Docker~\cite{merkel2014docker} is extensively used to both facilitate development and deployment as detailed in appendix~\ref{sec:docker}.
@@ -44,7 +44,7 @@ In this section we show how the requirements enumerated section~\ref{sec:require
         When compared to the query times of the original systems, the overhead is minimal.
         In tranSMART's case it stays the same as the Glowing Bear implementation remains.
         In the i2b2 case there is the overhead of using IRCT, however this overhead is minimal and close to a constant as the only processing is the translation of the query. 
-        This translation process is close to a simple mapping and is in the order of a dozen milliseconds (not including I/O).
+        This translation process is close to a simple mapping and is in the order of a dozen milliseconds, not including I/O.
         In the MedCo case the time is actually reduced, as the query do not pass through SHRINE and is sent directly to the MedCo nodes.
         
         
@@ -67,7 +67,7 @@ While it was feasible to re-implement support of tranSMART through PIC-SURE, the
 This however may raise concerns for the future development around our system because of the increased complexity.
 
 \subsection{Contributions to the Open-Source Community}
-The modifications or new implementations made in existing open-source projects were all the subject of \emph{pull request} on their original repositories, in order to mainline our work.
+The modifications or new implementations made in existing open-source projects were all the subject of \emph{pull requests} on their original repositories, in order to mainline our work.
 There is however no guarantee that the maintainers of those projects will accept them.
 If they are not accepted, either they can be with additional modifications, or they are simply rejected.
 In the first case, additional implementation effort to mainline our changes would be needed, but there would not be further consequences if properly done.

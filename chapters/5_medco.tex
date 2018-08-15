@@ -95,7 +95,7 @@ Predicates exposed through PIC-SURE are the same as i2b2, except with the suppor
 To use those predicates with encrypted query terms, we use a format that is recognized by the MedCo data source implementation in IRCT. 
 To do so we embed in the query term path the base64-encoded encrypted integer the following way:
 \begin{verbatim}
-    /<data source name>/<MedCo project name>/ENCRYPTED_KEY/<encrypted integer>/
+    /<data source>/<MedCo project>/ENCRYPTED_KEY/<encrypted integer>/
 \end{verbatim}
 
 
@@ -202,6 +202,7 @@ There is one result $\text{ENC}_{Pk_u}[R_i]$ per MedCo node $i$.
 According to access level of the user, it is possible to identify which result is coming from which node, or the result were securely shuffled between the nodes.
 The format of the result is a JSON string with the following format:
 
+\begin{samepage}
 \begin{verbatim}
 {
     "pub_key": "<public key used>",
@@ -211,6 +212,7 @@ The format of the result is a JSON string with the following format:
     }
 }    
 \end{verbatim}
+\end{samepage}
 
 % decryption
 All the encrypted results $\text{ENC}_{Pk_u}[R_i]$ are then decrypted using the private key $pk_u$ to give $R_i$, summed together, and displayed to the user using the same process as for i2b2.
